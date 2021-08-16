@@ -1,0 +1,15 @@
+FILE=TABLE
+PRODUCT=ecl_post
+
+Group:
+  Flavor=ANY
+  Qualifiers=""
+ 
+
+  Action=Setup
+    setupEnv()
+    proddir()
+    #pathPrepend(PATH, ${UPS_PROD_DIR}/samples)
+    envPrepend(PYTHONPATH,"${UPS_PROD_DIR}/lib")
+End:
+

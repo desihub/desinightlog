@@ -1,0 +1,134 @@
+.now_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 50px;
+    font-size:12pt;
+    background-color: gray;
+    border-color: black;
+}
+
+.connect_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: mediumturquoise;
+    border-color: black;
+}
+
+.init_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: mediumorchid;
+    border-color: black;
+}
+
+.add_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: darkorange;
+    border-color: black;
+}
+.delete_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: indianred;
+    border-color: black;
+}
+.load_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: gold;
+    border-color: black;
+}
+.update_button button.bk.bk-btn.bk-btn-default {
+    color: black;
+    width: 300px;
+    font-size:12pt;
+    background-color: darksalmon;
+    border-color: black;
+}
+.bk-root .h1-title-style {
+	color: black;
+	width: 1000px;
+	text-decoration: underline;
+	font-size:24pt;
+	font-style: bold;
+	font-weight: bold;
+}
+
+.bk-root .inst-style {
+	color: black;
+	font-size:12pt;
+}
+
+.bk-root .subt-style {
+	color: black;
+    width: 1000px;
+	text-decoration: underline;
+	font-size:18pt;
+	font-style: bold;
+}
+
+.bk-root .title-style {
+	color: black;
+	text-decoration: underline;
+	font-size:18pt;
+	font-style: bold;
+}
+
+.bk-root .alert-style {
+	color: red;
+	font-size:12pt;
+}
+.bk-root .bk-tab {
+    background-color: gainsboro;
+    width: 300px;
+    color: black;
+    font-style: bold;
+    font-size:10pt;
+    text-align: center;
+}
+.badtable {
+    width:300px;
+}
+.weathertable {
+    width:800px;
+}
+.badtable {
+    font-size: 11pt; 
+    font-family: Arial;
+    border: 1px black;
+}
+
+.badtable  tr:nth-child(even) {
+    background: #E0E0E0;
+}
+
+.badtable tr {
+    height: 10px;
+}
+.weathertable {
+    font-size: 11pt; 
+    font-family: Arial;
+    border: 1px black;
+}
+
+.weathertable  tr:nth-child(even) {
+    background: #E0E0E0;
+}
+
+.weathertable tr {
+    height: 10px;
+}
+.bk-root .bk-tabs-header .bk-tab.bk-active{
+	background-color: cornflowerblue;
+	color: white;
+	font-style: normal;
+	font-weight: bold;
+}
+.bk-root .bk-tabs-header .bk-tab:hover{
+	background-color: cornflowerblue
+}
