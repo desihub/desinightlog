@@ -328,6 +328,7 @@ class Report(Layout):
             except Exception as e:
                 self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
 
+        self.display_current_header()
         self.current_nl()
         self.get_exposure_list()
 
@@ -624,9 +625,12 @@ class Report(Layout):
             ts = datetime.datetime.now().strftime("%Y%m%dT%H:%M:%S")
         else: 
             ts = self.plan_time
-        data = [ts, self.plan_input.value]
-        self.DESI_Log.add_input(data, 'plan')
-        self.plan_alert.text = 'Last item input: {}'.format(self.plan_input.value)
+        if str(self.plan_input.value) in ['nan',' ','']:
+            self.plan_alert.text = 'Trying to add an item with NaN'
+        else:
+            data = [ts, self.plan_input.value]
+            self.DESI_Log.add_input(data, 'plan')
+            self.plan_alert.text = 'Last item input: {}'.format(self.plan_input.value)
         self.clear_input([self.plan_order, self.plan_input])
         self.plan_time = None
 
@@ -635,7 +639,8 @@ class Report(Layout):
             ts = datetime.datetime.now().strftime("%Y%m%dT%H:%M:%S")
         else:
             ts = self.milestone_time
-        data = [ts, self.milestone_input.value, self.milestone_exp_start.value, self.milestone_exp_end.value, self.milestone_exp_excl.value]
+        data = [ts, self.milestone_input.value, self.milestone_exp_start.value, self.milestone_exp_end.value, self.milestone_exp_excl.value,
+        self.report_type]
         self.DESI_Log.add_input(data,'milestone')
         self.milestone_alert.text = 'Last Milestone Entered: {}'.format(self.milestone_input.value)
         self.clear_input([self.milestone_input, self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl])
@@ -828,9 +833,12 @@ class Report(Layout):
             b, item = self.DESI_Log.load_index(int(self.milestone_load_num.value), 'milestone')
             if b:
                 self.milestone_input.value = str(item['Desc'])
-                self.milestone_exp_start.value = str(item['Exp_Start'])
-                self.milestone_exp_end.value = str(item['Exp_Stop'])
-                self.milestone_exp_excl.value = str(item['Exp_Excl'])
+                if str(item['Exp_Start']) not in ['nan','',' ']:
+                    self.milestone_exp_start.value = str(int(item['Exp_Start']))
+                if str(item['Exp_Stop']) not in ['nan','',' ']:
+                    self.milestone_exp_end.value = str(int(item['Exp_Stop']))
+                if str(item['Exp_Excl']) not in ['nan','',' ']:
+                    self.milestone_exp_excl.value = str(int(item['Exp_Excl']))
                 self.milestone_time = item['Time']
             else:
                 self.milestone_alert.text = "That milestone index doesn't exist yet. {}".format(item)
@@ -847,11 +855,10 @@ class Report(Layout):
             else:
                 self.exp_comment.value = str(item['Comment'])
                 if str(item['Exp_Start']) not in ['', ' ','nan']:
-                    self.exp_enter.value = str(item['Exp_Start'])
+                    self.exp_enter.value = str(int(item['Exp_Start']))
                     #self.loaded_exposure = True
                     self.exp_option.active = 1
                     self.os_exp_option.active = 1
-                #self.exp_exposure_finish.value = str(item['Exp_End'])
         except Exception as e:
             self.exp_alert.text = "Issue with loading that exposure: {}".format(e)
 
@@ -864,7 +871,8 @@ class Report(Layout):
                 self.prob_alert.text = 'This timestamp does not yet have an input from this user. {}'.format(item)
             else:
                 self.prob_input.value = str(item['Problem'])
-                self.prob_alarm.value = str(item['alarm_id'])
+                if item['alarm_id'] not in ['nan','',' ']:
+                    self.prob_alarm.value = str(int(item['alarm_id']))
                 self.prob_action.value = str(item['action'])
         except Exception as e:
             self.prob_alert.text = "Issue with loading that problem: {}".format(e)

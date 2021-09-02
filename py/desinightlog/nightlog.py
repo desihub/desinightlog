@@ -204,7 +204,7 @@ class NightLog(object):
             cols =['Time', 'Objective']
             file = self.objectives
         if tab == 'milestone':
-            cols = ['Time','Desc','Exp_Start','Exp_Stop','Exp_Excl']
+            cols = ['Time','Desc','Exp_Start','Exp_Stop','Exp_Excl','user']
             file = self.milestone
         if tab == 'weather':
             cols = ['Time','desc','temp','wind','humidity','seeing','tput','skylevel']
@@ -267,6 +267,11 @@ class NightLog(object):
                             filen.write(", excluding {}".format(int(float(row['Exp_Excl']))))
                         except:
                             filen.write(", excluding {}".format(row['Exp_Excl']))
+                try:
+                    if str(row['user']) not in ['nan','',' ']:
+                        filen.write(" ({})".format(row['user']))
+                except:
+                    pass
                 filen.write("</li>")
             filen.write("</ul>")
 

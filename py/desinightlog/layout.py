@@ -30,7 +30,7 @@ class Layout():
         self.comment_txt = Div(text=" ", css_classes=['inst-style'], width=1000)
 
 
-        self.time_title = Paragraph(text='Time* (Kitt Peak local time)', align='center')
+        self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
         self.now_btn = Button(label='Now', css_classes=['now_button'], width=75)
 
         self.full_time_text = Div(text='Total time between 18 deg. twilights (hrs): ', width=100) #Not on intro slide, but needed
@@ -39,7 +39,7 @@ class Layout():
         self.nl_dir = os.environ['NL_DIR']  
 
     def get_intro_layout(self):
-        self.contributer_list = TextAreaInput(placeholder='Contributer names (include all)', rows=2, cols=1, title='Names of all Contributers')
+        self.contributer_list = TextAreaInput(placeholder='Contributer names (include all)', rows=2, cols=1, title='Names of all contributers')
         self.contributer_btn = Button(label='Update Contributer List', css_classes=['add_button'], width=200)
 
         self.connect_hdr = Div(text="Connect to Night Log", css_classes=['subt-style'], width=800)
@@ -331,7 +331,7 @@ class Layout():
         <li>Every hour, as part of the OS checklist, include a description of the weather and observing conditions.</li>
         <li>The most recent weather and observing condition information will be added to the table below and the Night Log when you <b>Add Weather Description</b>.
         Please note that the additional information may not correlate exactly with the time stamp but are just the most recent recorded values</li>
-        <li>If you are not the OS, you can only see their inputs.</li>
+        <li>If you are not the LO, you can only see their inputs.</li>
         <li>SCROLL DOWN! There are plots of the ongoing telemetry for the observing conditions. These will be added to the Night Log when submitted at the end of the night.</li> 
         </ul>
         """
