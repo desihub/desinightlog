@@ -608,9 +608,9 @@ class Report(Layout):
         self.bad_cams_7.active = []
         self.bad_cams_8.active = []
         self.bad_cams_9.active = []
-        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
-
+        
         self.DESI_Log.add_bad_exp(data)
+        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
 
     def plan_add_new(self):
         self.plan_time = None
@@ -846,21 +846,34 @@ class Report(Layout):
             self.milestone_alert.text = "Issue with loading that milestone: {}".format(e)
 
     def exposure_load(self):
-        #Check if progress has been input with a given timestamp
-        try:
-            _exists, item = self.DESI_Log.load_timestamp(self.get_time(self.exp_time.value.strip()), self.report_type, 'exposure')
+        option = os_exp_option.active
+        if option == 0: #time
+            try:
+                _exists, item = self.DESI_Log.load_timestamp(self.get_time(self.exp_time.value.strip()), self.report_type, 'exposure')
+            except Exception as e:
+                self.exp_alert.text = 'Issue loading that exposure using the timestamp: {}'.format(e)
+        elif option == 1: #exposure
+            try:
+                _exists, itme = self.DESI_Log.load_exp(self.exp_enter.value)
+            except Exception as e:
+                self.exp_alert.text = 'Issue loading that exposure using the EXPID: {}'.format(e)
 
-            if not _exists:
-                self.exp_alert.text = 'This timestamp does not yet have an input from this user. {}'.format(item)
-            else:
+        if not _exists:
+            self.exp_alert.text = 'This input either does not exist or was input by another user: {}'.format(item)
+        else:
+            try:
+                self.exp_time.value = str(item['Time'])
                 self.exp_comment.value = str(item['Comment'])
                 if str(item['Exp_Start']) not in ['', ' ','nan']:
-                    self.exp_enter.value = str(int(item['Exp_Start']))
-                    #self.loaded_exposure = True
+                    self.exp_enter.value = str(item['Exp_Start'])
                     self.exp_option.active = 1
                     self.os_exp_option.active = 1
-        except Exception as e:
-            self.exp_alert.text = "Issue with loading that exposure: {}".format(e)
+                if str(item['Quality']) not in ['',' ','nan','None']:
+                    idx = np.where(self.quality_list == str(item['Quality']))[0]
+                    self.quality_btns.active = idx
+
+            except Exception as e:
+                self.exp_alert.text = "Issue with loading that exposure: {}".format(e)
 
     def problem_load(self):
         #Check if progress has been input with a given timestamp
