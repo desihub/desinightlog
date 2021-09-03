@@ -298,7 +298,7 @@ class Report(Layout):
             except Exception as e:
                 self.connect_txt.text = 'Error with Meta Data File: {}'.format(e)
         else:
-            self.init_layout.children[10] = self.update_layout
+            self.init_layout.children[9] = self.update_layout
             self.update_log_status = True
 
         contributer_file = self.DESI_Log._open_kpno_file_first(self.DESI_Log.contributer_file)
