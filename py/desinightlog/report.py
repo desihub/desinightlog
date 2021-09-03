@@ -247,7 +247,7 @@ class Report(Layout):
         self.get_night()
 
         if not os.path.exists(self.DESI_Log.obs_dir):
-            for dir_ in [self.DESI_Log.obs_dir, self.DESI_Log.nobs_dir, self.DESI_Log.image_dir]:
+            for dir_ in [self.DESI_Log.obs_dir]:
                 os.makedirs(dir_)
                 self.connect_txt.text = 'Connected to Night Log for {}'.format(self.night)
 
