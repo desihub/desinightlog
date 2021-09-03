@@ -230,7 +230,7 @@ class Report(Layout):
         hour = seconds // 3600
         minutes = (seconds % 3600) // 60
         sec = seconds % 60
-        str_ = '{}:{}'.format(int(hours), int(minutes))
+        str_ = '{}:{}'.format(int(hours), str(int(minutes)).zfill(2))
         return str_
 
     def _hm_to_dec(self,hm):
@@ -774,14 +774,14 @@ class Report(Layout):
                 img_data = self.img_upload_comments_os.value.encode('utf-8')
                 input_name = os.path.splitext(str(self.img_upload_comments_os.filename))
                 img_name = input_name[0] + '_{}.'.format(self.location) + input_name[1]
-                self.img_upload_comments_os.filename = None
+                #self.img_upload_comments_os.value = None 
 
         elif mode == 'problem':
             if hasattr(self, 'img_upload_problems') and self.img_upload_problems.filename not in [None, '',np.nan, 'nan']:
                 img_data = self.img_upload_problems.value.encode('utf-8')
                 input_name = os.path.splitext(str(self.img_upload_problems.filename))
                 img_name = input_name[0] + '_{}.'.format(self.location) + input_name[1]
-                self.img_upload_problems.filename = None
+                #self.img_upload_problems.value = None
 
         self.image_location_on_server = f'http://desi-www.kpno.noao.edu:8090/{self.night}/images/{img_name}'
         width=400
@@ -846,7 +846,7 @@ class Report(Layout):
             self.milestone_alert.text = "Issue with loading that milestone: {}".format(e)
 
     def exposure_load(self):
-        option = os_exp_option.active
+        option = self.os_exp_option.active
         if option == 0: #time
             try:
                 _exists, item = self.DESI_Log.load_timestamp(self.get_time(self.exp_time.value.strip()), self.report_type, 'exposure')
@@ -854,26 +854,28 @@ class Report(Layout):
                 self.exp_alert.text = 'Issue loading that exposure using the timestamp: {}'.format(e)
         elif option == 1: #exposure
             try:
-                _exists, itme = self.DESI_Log.load_exp(self.exp_enter.value)
+                _exists, item = self.DESI_Log.load_exp(self.exp_enter.value)
             except Exception as e:
                 self.exp_alert.text = 'Issue loading that exposure using the EXPID: {}'.format(e)
+        try:
+            if not _exists:
+                self.exp_alert.text = 'This input either does not exist or was input by another user: {}'.format(item)
+            else:
+                try:
+                    self.exp_time.value = self.DESI_Log.write_time(str(item['Time']), kp_only=True)
+                    self.exp_comment.value = str(item['Comment'])
+                    if str(item['Exp_Start']) not in ['', ' ','nan']:
+                        self.exp_enter.value = str(int(item['Exp_Start']))
+                        self.exp_option.active = 1
+                        self.os_exp_option.active = 1
+                    if str(item['Quality']) not in ['',' ','nan','None']:
+                        idx = np.where(np.array(self.quality_list) == np.array([item['Quality']]))[0][0]
+                        self.quality_btns.active = idx
 
-        if not _exists:
-            self.exp_alert.text = 'This input either does not exist or was input by another user: {}'.format(item)
-        else:
-            try:
-                self.exp_time.value = str(item['Time'])
-                self.exp_comment.value = str(item['Comment'])
-                if str(item['Exp_Start']) not in ['', ' ','nan']:
-                    self.exp_enter.value = str(item['Exp_Start'])
-                    self.exp_option.active = 1
-                    self.os_exp_option.active = 1
-                if str(item['Quality']) not in ['',' ','nan','None']:
-                    idx = np.where(self.quality_list == str(item['Quality']))[0]
-                    self.quality_btns.active = idx
-
-            except Exception as e:
-                self.exp_alert.text = "Issue with loading that exposure: {}".format(e)
+                except Exception as e:
+                    self.exp_alert.text = "Issue with loading that exposure: {}".format(e)
+        except:
+            pass
 
     def problem_load(self):
         #Check if progress has been input with a given timestamp
@@ -920,13 +922,16 @@ class Report(Layout):
         df.to_csv(self.DESI_Log.time_use, index=False)
 
     def summary_add(self):
-        now = datetime.datetime.now().strftime("%H:%M")
-        half = self.summary_option.active
-        data = OrderedDict()
-        data['SUMMARY_{}'.format(half)] = self.summary_input.value
-        self.DESI_Log.add_summary(data)
-        self.milestone_alert.text = 'Summary Information Entered at {}: {}'.format(now, self.summary_input.value)
-        self.clear_input([self.summary_input])
+        if self.summary_input.value in ['',' ','nan','None']:
+            self.milestone_alert.text = 'Nothing written in the summary so not submitted. Try Loading again.'
+        else:
+            now = datetime.datetime.now().strftime("%H:%M")
+            half = self.summary_option.active
+            data = OrderedDict()
+            data['SUMMARY_{}'.format(half)] = self.summary_input.value
+            self.DESI_Log.add_summary(data)
+            self.milestone_alert.text = 'Summary Information Entered at {}: {}'.format(now, self.summary_input.value)
+            self.clear_input([self.summary_input])
 
     def summary_load(self):
         half = self.summary_option.active

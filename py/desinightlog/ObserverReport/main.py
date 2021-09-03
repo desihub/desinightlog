@@ -20,6 +20,9 @@ from bokeh.models.widgets import Panel, Tabs
 import nightlog as nl
 from report import Report
 
+#os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
+#os.environ['NW_DIR'] = '/exposures/desi'
+
 class Obs_Report(Report):
     def __init__(self):
         Report.__init__(self)

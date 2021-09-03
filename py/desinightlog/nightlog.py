@@ -461,16 +461,16 @@ class NightLog(object):
             return False, e
 
     def load_exp(self, exp):
-
-        df = self._combine_compare_csv_files(the_path)
+        df = self._combine_compare_csv_files(self.obs_exp)
         try:
-            item = df[df.Exp_Start == exp]
+            item = df[df.Exp_Start == float(exp)]
             item = item.iloc[0]
             if len(item) > 0:
                 return True, item
             else:
                 return False, item
         except Exception as e:
+            print(e)
             return False, e
 
     def load_timestamp(self, time, user, exp_type):
