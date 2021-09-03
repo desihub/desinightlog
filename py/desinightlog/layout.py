@@ -75,7 +75,7 @@ class Layout():
         self.nonobs_inst = Div(text=inst, css_classes=['inst-style'], width=1000)
         self.nonobs_input_exp = TextInput(title='Your Name', placeholder='Vera Rubin', width=150)
         self.nonobs_btn_exp = Button(label='Submit', css_classes=['init_button'], width=150)
-        self.nonobs_input_prob = TextInput(title='Your Name', placeholder='Vera Rubin', width=150)
+        self.nonobs_input_prob = TextInput(title='Your Name', placeholder='Nancy Grace Roman', width=150)
         self.nonobs_btn_prob = Button(label='Submit', css_classes=['init_button'], width=150)
 
         self.nonobs_layout_exp = layout([self.nonobs_inst, self.nonobs_input_exp, self.nonobs_btn_exp], width=1000)
