@@ -393,31 +393,31 @@ class Report(Layout):
         nl_file.closed
 
     def current_nl(self):
-        #try:
-        now = datetime.datetime.now()
-        self.DESI_Log.finish_the_night()
-        path = self.DESI_Log.nightlog_html 
-        nl_file = open(path,'r')
-        nl_txt = ''
-        for line in nl_file:
-            nl_txt +=  line 
-        nl_txt += '<h3> All Exposures </h3>'
-        self.nl_text.text = nl_txt
-        nl_file.closed
-        self.nl_alert.text = 'Last Updated on this page: {}'.format(now)
-        self.nl_subtitle.text = "Current DESI Night Log: {}".format(path)
-        self.get_exp_list()
-        self.get_weather()
         try:
-            self.make_telem_plots()
-            return True
-        except:
-            #print('Something wrong with making telemetry plots')
-            return True 
-        #except Exception as e:
-        #    self.logger.info('current_nl Exception: %s' % str(e))
-        #    self.nl_alert.text = 'You are not connected to a Night Log'
-        #    return False
+            now = datetime.datetime.now()
+            self.DESI_Log.finish_the_night()
+            path = self.DESI_Log.nightlog_html 
+            nl_file = open(path,'r')
+            nl_txt = ''
+            for line in nl_file:
+                nl_txt +=  line 
+            nl_txt += '<h3> All Exposures </h3>'
+            self.nl_text.text = nl_txt
+            nl_file.closed
+            self.nl_alert.text = 'Last Updated on this page: {}'.format(now)
+            self.nl_subtitle.text = "Current DESI Night Log: {}".format(path)
+            self.get_exp_list()
+            self.get_weather()
+            try:
+                self.make_telem_plots()
+                return True
+            except:
+                self.logger.info('Something wrong with making telemetry plots')
+                return True 
+        except Exception as e:
+            self.logger.info('current_nl Exception: %s' % str(e))
+            self.nl_alert.text = 'You are not connected to a Night Log'
+            return False
 
     def get_exp_list(self):
         try:
@@ -679,6 +679,7 @@ class Report(Layout):
                     time = self.get_time(self.exp_time.value.strip())
                     comment = self.exp_comment.value.strip()
                     exp = None
+                    submit = True
                 except Exception as e:
                     self.exp_alert.text = 'There is something wrong with your input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'),e)
             else:
@@ -687,39 +688,39 @@ class Report(Layout):
         elif self.os_exp_option.active == 1: #Exposure
             try:
                 exp = int(float(self.exp_enter.value))
+                comment = self.exp_comment.value.strip()
+                if self.report_type == 'SO':
+                    quality = self.quality_list[self.quality_btns.active]
+
+                if str(self.exp_time.value.strip()) in ['',' ','None','nan']:
+                    time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+                else:
+                    try:
+                        time = self.get_time(self.exp_time.value.strip())
+                    except:
+                        time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+                submit = True
             except Exception as e:
                 self.exp_alert.text = "Problem with the Exposure you Selected @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
-
-            comment = self.exp_comment.value.strip()
-            if str(self.exp_time.value.strip()) in ['',' ','None','nan']:
-                time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
-            else:
-                try:
-                    time = self.get_time(self.exp_time.value.strip())
-                except:
-                    time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
-            print(self.exp_time.value.strip(), time)
-        if self.report_type == 'SO':
-            quality = self.quality_list[self.quality_btns.active]
 
         if self.report_type == 'NObs':
             your_name = self.my_name
         elif self.report_type in ['LO','SO']:
             your_name = self.report_type
-        #try:
+
         img_name, img_data, preview = self.image_uploaded('comment')
         now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%H:%M")
-        data = [self.get_time(now), exp, quality, self.exp_comment.value.strip(), your_name]
-        self.DESI_Log.add_input(data, 'exp', img_name=img_name, img_data=img_data)
-        self.exp_alert.text = 'Last Input was made @ {}: {}'.format(datetime.datetime.now().strftime("%H:%M"),self.exp_comment.value)
-        #except Exception as e:
-        #    self.exp_alert.text = 'Error with your Input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'), e)
-        if quality == 'Bad':
-            self.exp_layout_1.children[11] = self.bad_layout_1
-            self.bad_exp_val = exp
-            self.bad_comment = self.exp_comment.value.strip()
-        else:
-            self.clear_input([self.exp_time, self.exp_enter, self.exp_comment])
+        if submit:
+            data = [time, exp, quality, self.exp_comment.value.strip(), your_name]
+            self.DESI_Log.add_input(data, 'exp', img_name=img_name, img_data=img_data)
+            self.exp_alert.text = 'Last Input was made @ {}: {}'.format(datetime.datetime.now().strftime("%H:%M"),self.exp_comment.value)
+
+            if quality == 'Bad':
+                self.exp_layout_1.children[11] = self.bad_layout_1
+                self.bad_exp_val = exp
+                self.bad_comment = self.exp_comment.value.strip()
+            else:
+                self.clear_input([self.exp_time, self.exp_enter, self.exp_comment])
 
     def check_add(self):
         """add checklist time to Night Log
