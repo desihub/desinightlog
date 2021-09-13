@@ -245,7 +245,7 @@ class Report(Layout):
         """Connect to Existing Night Log with Input Date
         """
         self.get_night()
-
+        print(self.DESI_Log)
         if not os.path.exists(self.DESI_Log.obs_dir):
             for dir_ in [self.DESI_Log.obs_dir]:
                 os.makedirs(dir_)
@@ -685,21 +685,22 @@ class Report(Layout):
                 self.exp_alert.text = 'Fill in the time'
                 
         elif self.os_exp_option.active == 1: #Exposure
-            if self.exp_option.active == 0:
-                try:
-                    exp = int(float(self.exp_select.value))
-                except Exception as e:
-                    self.exp_alert.text = "Problem with the Exposure you Selected @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
+            try:
+                exp = int(float(self.exp_enter.value))
+            except Exception as e:
+                self.exp_alert.text = "Problem with the Exposure you Selected @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
 
-            elif self.exp_option.active ==1:
-                try:
-                    exp = int(float(self.exp_enter.value.strip()))
-                except Exception as e:
-                    self.exp_alert.text = "Problem with the Exposure you Entered @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
             comment = self.exp_comment.value.strip()
-            time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
-            if self.report_type == 'SO':
-                quality = self.quality_list[self.quality_btns.active]
+            if str(self.exp_time.value.strip()) in ['',' ','None','nan']:
+                time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+            else:
+                try:
+                    time = self.get_time(self.exp_time.value.strip())
+                except:
+                    time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+            print(self.exp_time.value.strip(), time)
+        if self.report_type == 'SO':
+            quality = self.quality_list[self.quality_btns.active]
 
         if self.report_type == 'NObs':
             your_name = self.my_name
@@ -808,7 +809,7 @@ class Report(Layout):
         time = self.get_time(self.exp_time.value.strip())
         self.DESI_Log.delete_item(time, 'progress', self.report_type)
         self.exp_alert.text = 'Deleted item @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'), self.exp_comment.value)
-        self.clear_input([self.exp_time, self.exp_comment, self.exp_exposure_start])
+        self.clear_input([self.exp_time, self.exp_comment, self.exp_time, self.exp_enter])
 
     def problem_delete(self):
         time = self.get_time(self.prob_time.value.strip())
