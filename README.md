@@ -11,10 +11,10 @@ Details below describe additional information on how these applications are bein
 KPNO:
 * Running under dosmanager@desi-server. This is only accessible by the DESI ICS team
 * Nightlogs are saved to /software/www2/html/nightlogs/
-* Code running from 
+* Code running from /software/products/desinightlog-main/
 * Logs for running the Nightlog: /data/msdos/desinightlog/logs
 * Directory structure is set up daily at 12pm MST using a cronjob to ensure permissions are correctly set.
- * msdos@desi-observer:/data_local/home/msdos/parkerf/desilo/nl_dir.sh
+ * msdos@desi-server:/data_local/home/msdos/parkerf/desilo/nl_dir.sh
 
 NERSC:
 * Running as a Rancher2 Spin Application
