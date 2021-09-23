@@ -366,6 +366,7 @@ class Report(Layout):
             meta['dawn_10_deg'] = eph['dawn_ten']
 
             self.full_time = (datetime.datetime.strptime(meta['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
+            print('full time 2: ',self.full_time)
             self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
             self.plots_start = meta['dusk_10_deg']
             self.plots_end = meta['dawn_10_deg']
@@ -917,8 +918,8 @@ class Report(Layout):
                 except:
                     data[name] = 0
                     total += 0
-
-        data['18deg'] = self.full_time
+        print('full time: ',self.full_time)
+        data['18deg'] = float(self.full_time)
         data['total'] = total
         self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
         df = pd.DataFrame(data, index=[0])
