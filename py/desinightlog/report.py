@@ -47,7 +47,7 @@ class Report(Layout):
     def __init__(self):
         Layout.__init__(self)
 
-        self.test = True 
+        self.test = False 
 
         self.report_type = None 
         self.kp_zone = TimezoneInfo(utc_offset=-7*u.hour)
