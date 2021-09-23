@@ -530,7 +530,7 @@ class NightLog(object):
             for name, item in obs_items.items():
                 if name == 'Time between 18 deg. twilight':
                     try:
-                        file_nl.write("<li> {}: {}</li>".format(name, float(item)))
+                        file_nl.write("<li> {}: {:.3f}</li>".format(name, float(item)))
                     except Exception as e:
                         self.logger.info(e)
                 else:

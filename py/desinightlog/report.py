@@ -47,7 +47,7 @@ class Report(Layout):
     def __init__(self):
         Layout.__init__(self)
 
-        self.test = False 
+        self.test = True 
 
         self.report_type = None 
         self.kp_zone = TimezoneInfo(utc_offset=-7*u.hour)
@@ -500,9 +500,9 @@ class Report(Layout):
 
             fig = plt.figure(figsize=(10,15))
             ax1 = fig.add_subplot(8,1,1)
-            ax1.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','mirror_temp'), s=10, label='mirror temp')    
-            ax1.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','truss_temp'), s=10, label='truss temp')  
-            ax1.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','air_temp'), s=10, label='air temp') 
+            ax1.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','mirror_temp'), 'o-', label='mirror temp')    
+            ax1.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','truss_temp'),'o-',  label='truss temp')  
+            ax1.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'telescope','air_temp'),'o-',  label='air temp') 
             ax1.set_ylabel("Telescope Temperature (C)")
             ax1.legend()
             ax1.grid(True)
@@ -510,49 +510,49 @@ class Report(Layout):
 
             ax2 = fig.add_subplot(8,1,2, sharex = ax1)
             c=next(color)
-            ax2.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'tower','humidity'), s=10, color=c, label='humidity') 
+            ax2.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'tower','humidity'),'o-',  color=c, label='humidity') 
             ax2.set_ylabel("Humidity %")
             ax2.grid(True)
             ax2.tick_params(labelbottom=False)
 
             ax3 = fig.add_subplot(8,1,3, sharex=ax1) 
             c=next(color)
-            ax3.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'tower','wind_speed'), s=10, color=c, label='wind speed')
+            ax3.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), self.get_telem_list(exp_df,'tower','wind_speed'), 'o-', color=c, label='wind speed')
             ax3.set_ylabel("Wind Speed (mph)")
             ax3.grid(True)
             ax3.tick_params(labelbottom=False)
 
             ax4 = fig.add_subplot(8,1,4, sharex=ax1)
             c=next(color)
-            ax4.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.airmass, s=10, color=c, label='airmass')
+            ax4.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.airmass, 'o-', color=c, label='airmass')
             ax4.set_ylabel("Airmass")
             ax4.grid(True)
             ax4.tick_params(labelbottom=False)
 
             ax5 = fig.add_subplot(8,1,5, sharex=ax1)
             c=next(color)
-            ax5.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.exptime, s=10, color=c, label='exptime')
+            ax5.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.exptime, 'o-', color=c, label='exptime')
             ax5.set_ylabel("Exposure time (s)")
             ax5.grid(True)
             ax5.tick_params(labelbottom=False)
 
             ax6 = fig.add_subplot(8,1,6,sharex=ax1)
             c=next(color)
-            ax6.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.seeing, s=10, color=c, label='seeing')   
+            ax6.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.seeing,'o-',  color=c, label='seeing')   
             ax6.set_ylabel("Seeing")
             ax6.grid(True)
             ax6.tick_params(labelbottom=False)
 
             ax7 = fig.add_subplot(8,1,7,sharex=ax1)
             c=next(color)
-            ax7.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), tput, s=10, color=c, label='transparency')
+            ax7.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), tput, 'o-', color=c, label='transparency')
             ax7.set_ylabel("Transparency (%)")
             ax7.grid(True)
             ax7.tick_params(labelbottom=False)
 
             ax8 = fig.add_subplot(8,1,8,sharex=ax1)
             c=next(color)
-            ax8.scatter(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.skylevel, s=10, color=c, label='Sky Level')      
+            ax8.plot(exp_df.date_obs.dt.tz_convert('US/Arizona'), exp_df.skylevel, 'o-', color=c, label='Sky Level')      
             ax8.set_ylabel("Sky level (AB/arcsec^2)")
             ax8.grid(True)
 
@@ -918,7 +918,6 @@ class Report(Layout):
                 except:
                     data[name] = 0
                     total += 0
-        print('full time: ',self.full_time)
         data['18deg'] = float(self.full_time)
         data['total'] = total
         self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
@@ -981,11 +980,6 @@ class Report(Layout):
             self.nl_text.text = 'You cannot submit a Night Log to the eLog until you have connected to an existing Night Log or initialized tonights Night Log'
         else:
             self.logger.info("Starting Nightlog Submission Process")
-            try:
-                from ECLAPI import ECLConnection, ECLEntry
-            except ImportError:
-                ECLConnection = None
-                self.nl_text.text = "Can't connect to eLog"
 
             f = self.DESI_Log._open_kpno_file_first(self.DESI_Log.nightlog_html)
             nl_file=open(f,'r')
@@ -994,29 +988,35 @@ class Report(Layout):
             for line in lines:
                 nl_html += line
 
-            e = ECLEntry('Synopsis_Night', text=nl_html, textile=True)
-
-            subject = 'Night Summary {}'.format(self.night)
-            e.addSubject(subject)
-            url = 'http://desi-www.kpno.noao.edu:8090/ECL/desi'
-            user = 'dos'
-            pw = 'dosuser'
-
             #make Paul's plot
             try:
-                os.system("{}/bin/plotnightobs -n {}".format(os.environ['SURVEYOPSDIR'],self.night)) 
+                os.system("{}/bin/plotnightobs -n {}".format(os.environ['SURVEYOPSDIR'],self.night))
             except Exception as e:
                 self.logger.info('Issues with Pauls plot: {}'.format(e))
 
             if self.test:
                 pass
             else:
-                elconn = ECLConnection(url, user, pw)
-                response = elconn.post(e)
-                elconn.close()
-                if response[0] != 200:
-                   raise Exception(response)
-                   self.submit_text.text = "You cannot post to the eLog on this machine"
+                try:
+                    from ECLAPI import ECLConnection, ECLEntry
+                    e = ECLEntry('Synopsis_Night', text=nl_html, textile=True)
+
+                    subject = 'Night Summary {}'.format(self.night)
+                    e.addSubject(subject)
+                    url = 'http://desi-www.kpno.noao.edu:8090/ECL/desi'
+                    user = 'dos'
+                    pw = 'dosuser'
+
+                    elconn = ECLConnection(url, user, pw)
+                    response = elconn.post(e)
+                    elconn.close()
+                    if response[0] != 200:
+                        raise Exception(response)
+                        self.submit_text.text = "You cannot post to the eLog on this machine"
+                except:
+                    ECLConnection = None
+                    self.nl_text.text = "Can't connect to eLog"
+
             #Add bad exposures
             try:
                 survey_dir = os.path.join(os.environ['NL_DIR'],'ops')
