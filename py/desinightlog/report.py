@@ -14,6 +14,7 @@ import psycopg2
 import subprocess
 import pytz
 import json
+import ephem
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -31,7 +32,7 @@ import logging
 from astropy.time import TimezoneInfo
 import astropy.units.si as u
 
-from util import sky_calendar
+#from util import sky_calendar
 
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -261,7 +262,7 @@ class Report(Layout):
             self.report_type = 'LO'
         elif self.observer == 1:
             self.title.text = 'DESI Nightly Intake - Support Observer'
-            self.layout.tabs = [self.intro_tab, self.milestone_tab_1, self.exp_tab_1, self.prob_tab, self.weather_tab_1, self.nl_tab_1, self.ns_tab]
+            self.layout.tabs = [self.intro_tab, self.milestone_tab_0, self.exp_tab_1, self.prob_tab, self.weather_tab_1, self.nl_tab_1, self.ns_tab]
             self.time_tabs = [None, None, self.exp_time, self.prob_time, None, None, None]
             self.connect_txt.text = 'Connected to Night Log for {}'.format(self.night)
             self.report_type = 'SO'
@@ -315,7 +316,8 @@ class Report(Layout):
                self.contributer_list.value = cont_txt
             except Exception as e:
                self.connect_txt.text = 'Error with Contributer File: {}'.format(e)
-
+        self.full_time = (datetime.datetime.strptime(meta_dict['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
+        self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
         time_use_file = self.DESI_Log._open_kpno_file_first(self.DESI_Log.time_use)
         if os.path.exists(time_use_file):
             try:
@@ -327,8 +329,6 @@ class Report(Layout):
                 self.weather_loss_time.value = self._dec_to_hm(data['weather_loss'])
                 self.tel_loss_time.value = self._dec_to_hm(data['tel_loss'])
                 self.total_time.text = 'Time Documented (hrs): {}'.format(self._dec_to_hm(data['total']))
-                self.full_time = (datetime.datetime.strptime(meta_dict['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
-                self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
             except Exception as e:
                 self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
 
@@ -341,6 +341,60 @@ class Report(Layout):
         self.my_name = str(self.nonobs_input_prob.value)
         self.layout.tabs[2] = self.prob_tab
 
+    def get_ephemeris(self, date):
+        kpno = ephem.Observer()
+        observatory = {'TELESCOP':'KPNO 4.0-m telescope',
+           'OBSERVAT':'KPNO',
+           'OBS-LAT':31.9640293,
+           'OBS-LONG':-111.5998917,
+           'OBS-ELEV':2123.0}
+        kpno.lon = observatory['OBS-LONG']*ephem.degree
+        kpno.lat = observatory['OBS-LAT']*ephem.degree
+        kpno.elevation = observatory['OBS-ELEV']
+        kpno.epoch = ephem.J2000
+        kpno.pressure = 0
+        kpno.horizon = '-1:30'
+
+        date = '{}-{}-{} 19:00:00'.format(date[0:4],date[4:6],date[6:])
+        kpno.date = date
+
+        obs_info = OrderedDict()
+        sun = ephem.Sun()
+        sun.compute(kpno.date)
+        moon = ephem.Moon()
+        moon.compute(kpno.date)
+        obs_info['sunset'] = kpno.next_setting(sun).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime("%Y%m%dT%H:%M")
+        #Sunset
+        obs_info['sunrise'] = kpno.next_rising(sun).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime("%Y%m%dT%H:%M")
+        #Sunrise
+        try:
+            obs_info['moonrise'] = kpno.next_rising(moon).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime("%Y%m%dT%H:%M")
+        except:
+            obs_info['moonrise'] = None
+        try:
+            obs_info['moonset'] = kpno.next_setting(moon).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime("%Y%m%dT%H:%M")
+        except:
+            obs_info['moonset'] = None
+
+        for horizon, name in [('-6','civil'),('-10','ten'),('-12','nautical'),('-18','astronomical')]:
+            kpno.horizon = horizon
+            dusk =  kpno.next_setting(sun).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
+            t = pd.to_datetime(dusk)
+            round_t = pd.Series(t).dt.round('min').dt.strftime("%Y%m%dT%H:%M")
+            obs_info[f'dusk_{name}'] = str(round_t.values[0])
+            dawn =  kpno.next_rising(sun).datetime().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
+            t = pd.to_datetime(dawn)
+            round_t = pd.Series(t).dt.round('min')
+            round_t = round_t.dt.strftime("%Y%m%dT%H:%M")
+            obs_info[f'dawn_{name}'] = str(round_t.values[0])
+        try:
+            obs_info['illumination'] = round(moon.moon_phase, 3)
+        except:
+            obs_info['illumination'] = None
+        return obs_info
+
+
+
     def add_observer_info(self):
         """ Initialize Night Log with Input Date
         """
@@ -352,7 +406,7 @@ class Report(Layout):
             meta['so_2_firstname'], meta['so_2_lastname'] = self.so_name_2.value.split(' ')[0], ' '.join(self.so_name_2.value.split(' ')[1:])
             meta['OA_firstname'], meta['OA_lastname'] = self.OA.value.split(' ')[0], ' '.join(self.OA.value.split(' ')[1:])
 
-            eph = sky_calendar(self.night)
+            eph = self.get_ephemeris(self.night)
             meta['time_sunset'] = eph['sunset']
             meta['time_sunrise'] = eph['sunrise']
             meta['time_moonrise'] = eph['moonrise']
@@ -366,12 +420,10 @@ class Report(Layout):
             meta['dawn_10_deg'] = eph['dawn_ten']
 
             self.full_time = (datetime.datetime.strptime(meta['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
-            print('full time 2: ',self.full_time)
             self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
             self.plots_start = meta['dusk_10_deg']
             self.plots_end = meta['dawn_10_deg']
             self.DESI_Log.get_started_os(meta)
-
 
             self.connect_txt.text = 'Night Log Observer Data is Updated'
             self.DESI_Log.write_intro()
