@@ -39,7 +39,7 @@ class NightLog(object):
 
         self.root_dir = os.path.join(os.environ['NL_DIR'],self.obsday)
         self.image_dir = os.path.join(self.root_dir,'images')
-        self.obs_dir = os.path.join(self.root_dir,"Observers")
+        self.obs_dir = os.path.join(self.root_dir,"Observer")
 
         self.header_html = os.path.join(self.root_dir,'header_{}.html'.format(self.location))
         self.nightlog_html = os.path.join(self.root_dir,'nightlog_{}.html'.format(self.location))
@@ -523,8 +523,8 @@ class NightLog(object):
             df = df.fillna(value=0)
             d = df.iloc[0]
 
-            obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],
-                'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'Total Recorded':d['total'],'Time between 18 deg. twilight':d['18deg']})
+            obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'Total Recorded':d['total'],'Time between 18 deg. twilight':d['18deg']})
+            file_nl.write("<br/><br/>")
             file_nl.write("Time Use (hrs):<br/>")
             file_nl.write("<ul>")
             for name, item in obs_items.items():
