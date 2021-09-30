@@ -39,7 +39,7 @@ class NightLog(object):
 
         self.root_dir = os.path.join(os.environ['NL_DIR'],self.obsday)
         self.image_dir = os.path.join(self.root_dir,'images')
-        self.obs_dir = os.path.join(self.root_dir,"Observer")
+        self.obs_dir = os.path.join(self.root_dir,"Observers")
 
         self.header_html = os.path.join(self.root_dir,'header_{}.html'.format(self.location))
         self.nightlog_html = os.path.join(self.root_dir,'nightlog_{}.html'.format(self.location))

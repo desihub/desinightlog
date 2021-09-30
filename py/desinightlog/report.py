@@ -246,7 +246,6 @@ class Report(Layout):
         """Connect to Existing Night Log with Input Date
         """
         self.get_night()
-        print(self.DESI_Log)
         if not os.path.exists(self.DESI_Log.obs_dir):
             for dir_ in [self.DESI_Log.obs_dir]:
                 os.makedirs(dir_)
@@ -317,20 +316,23 @@ class Report(Layout):
             except Exception as e:
                self.connect_txt.text = 'Error with Contributer File: {}'.format(e)
         time_use_file = self.DESI_Log._open_kpno_file_first(self.DESI_Log.time_use)
-        if os.path.exists(time_use_file):
-            try:
-                df = pd.read_csv(time_use_file)
-                data = df.iloc[0]
-                self.obs_time.value =  self._dec_to_hm(data['obs_time'])
-                self.test_time.value = self._dec_to_hm(data['test_time'])
-                self.inst_loss_time.value = self._dec_to_hm(data['inst_loss'])
-                self.weather_loss_time.value = self._dec_to_hm(data['weather_loss'])
-                self.tel_loss_time.value = self._dec_to_hm(data['tel_loss'])
-                self.total_time.text = 'Time Documented (hrs): {}'.format(self._dec_to_hm(data['total']))
-                self.full_time = (datetime.datetime.strptime(meta_dict['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
-                self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
-            except Exception as e:
-                self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
+        if not os.path.exists(time_use_file):
+            self.update_log_status = True
+            self.add_observer_info()
+        try:
+            df = pd.read_csv(time_use_file)
+            data = df.iloc[0]
+            self.obs_time.value =  self._dec_to_hm(data['obs_time'])
+            self.test_time.value = self._dec_to_hm(data['test_time'])
+            self.inst_loss_time.value = self._dec_to_hm(data['inst_loss'])
+            self.weather_loss_time.value = self._dec_to_hm(data['weather_loss'])
+            self.tel_loss_time.value = self._dec_to_hm(data['tel_loss'])
+            self.total_time.text = 'Time Documented (hrs): {}'.format(self._dec_to_hm(data['total']))
+            self.full_time = (datetime.datetime.strptime(meta_dict['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
+            self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
+            self.milestone_alert.text = 'Time Use Data Updated'
+        except Exception as e:
+            self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
 
 
     def nonobs_entry_exp(self):
@@ -427,7 +429,7 @@ class Report(Layout):
 
             self.connect_txt.text = 'Night Log Observer Data is Updated'
             self.DESI_Log.write_intro()
-            self.connect_log()
+            #self.connect_log()
             self.update_log_status = False
             self.intro_layout.children[9] = self.init_btn
         else:
