@@ -81,11 +81,13 @@ class Report(Layout):
         self.img_upload.on_change('value', self.upload_image)
 
         self.img_upload_comments_os = FileInput(accept=".png")
-        self.img_upload_comments_os.on_change('value', self.upload_image_comments_os)
+        self.img_upload_comments_os.on_change('filename', self.upload_image_comments_os)
         self.img_upload_comments_dqs = FileInput(accept=".png")
-        self.img_upload_comments_dqs.on_change('value', self.upload_image_comments_dqs)
+        self.img_upload_comments_dqs.on_change('filename', self.upload_image_comments_dqs)
         self.img_upload_problems = FileInput(accept=".png")
-        self.img_upload_problems.on_change('value', self.upload_image_problems)
+        self.img_upload_problems.on_change('filename', self.upload_image_problems)
+
+        self.current_img_name = None
 
         self.nl_file = None
         self.milestone_time = None
@@ -828,19 +830,18 @@ class Report(Layout):
         img_name = None
 
         if mode == 'comment':         
-            if self.exp_comment.value not in [None, ''] and hasattr(self, 'img_upload_comments_os') and self.img_upload_comments_os.filename not in [None,'','nan',np.nan]:
+            if self.exp_comment.value not in [None, ''] and hasattr(self, 'img_upload_comments_os') and self.img_upload_comments_os.filename not in [self.current_img_name, None,'','nan',np.nan]:
                 img_data = self.img_upload_comments_os.value.encode('utf-8')
                 input_name = os.path.splitext(str(self.img_upload_comments_os.filename))
-                img_name = input_name[0] + '_{}.'.format(self.location) + input_name[1]
-                #self.img_upload_comments_os.value = None 
+                img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
+                self.current_img_name = self.img_upload_comments_os.filename
 
         elif mode == 'problem':
-            if hasattr(self, 'img_upload_problems') and self.img_upload_problems.filename not in [None, '',np.nan, 'nan']:
+            if hasattr(self, 'img_upload_problems') and self.img_upload_problems.filename not in [self.current_img_name, None, '',np.nan, 'nan']:
                 img_data = self.img_upload_problems.value.encode('utf-8')
                 input_name = os.path.splitext(str(self.img_upload_problems.filename))
-                img_name = input_name[0] + '_{}.'.format(self.location) + input_name[1]
-                #self.img_upload_problems.value = None
-
+                self.current_img_name = self.img_upload_problems.filename
+                img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
         self.image_location_on_server = f'http://desi-www.kpno.noao.edu:8090/{self.night}/images/{img_name}'
         width=400
         height=400 #http://desi-www.kpno.noao.edu:8090/nightlogs
