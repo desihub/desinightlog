@@ -44,11 +44,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
-import nightlog as nl
-from layout import Layout
-
 sys.path.append(os.getcwd())
 sys.path.append('./ECLAPI-8.0.12/lib')
+
+import nightlog as nl
+from layout import Layout
 
 class Report(Layout):
     """

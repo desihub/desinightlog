@@ -14,13 +14,12 @@ from bokeh.io import curdoc
 from bokeh.models.widgets.markups import Div
 from bokeh.models.widgets import Tabs
 
-from report import Report
-
 sys.path.append(os.getcwd())
 sys.path.append('./ECLAPI-8.0.12/lib')
+from report import Report
 
-#os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
-#os.environ['NW_DIR'] = '/exposures/desi'
+os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
+os.environ['NW_DIR'] = '/exposures/desi'
 
 class Obs_Report(Report):
     def __init__(self):
