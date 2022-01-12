@@ -1,59 +1,72 @@
+"""
+Created on July 21, 2021
+
+@author: Parker Fagrelius
+
+Manages use of Bokeh application to provide input to the NightLog. 
+Bokeh layouts initialized in layout.py
+
+"""
+
 #Imports
-import os, sys
+import os
+import sys
 import base64
-import glob
-import time, sched
 import datetime 
-from datetime import timezone
-from datetime import timedelta
-from collections import OrderedDict
-import numpy as np
-import pandas as pd
 import socket
-import psycopg2
-import subprocess
 import pytz
 import json
+import logging
+import smtplib
+import psycopg2
+
+import numpy as np
+import pandas as pd
+import astropy.units.si as u
 
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-from bokeh.io import curdoc, save, export_png  # , output_file, save
-from bokeh.models import (TextInput, ColumnDataSource, DateFormatter, RadioGroup,CheckboxButtonGroup,Paragraph, Button, TextAreaInput, Select,CheckboxGroup, RadioButtonGroup, DateFormatter,CheckboxGroup)
+from datetime import timezone
+from datetime import timedelta
+from collections import OrderedDict
+
+from bokeh.models import DateFormatter
 from bokeh.models.widgets.markups import Div
-from bokeh.layouts import layout, column, row
-from bokeh.models.widgets import Panel, Tabs, FileInput
-from bokeh.models.widgets.tables import DataTable, TableColumn
-from bokeh.plotting import figure
-import logging
+from bokeh.models.widgets import FileInput
+
 from astropy.time import TimezoneInfo
-import astropy.units.si as u
 
-from util import sky_calendar
-
-import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
-sys.path.append(os.getcwd())
-sys.path.append('./ECLAPI-8.0.12/lib')
+from util import sky_calendar
 import nightlog as nl
 from layout import Layout
 
+sys.path.append(os.getcwd())
+sys.path.append('./ECLAPI-8.0.12/lib')
+
 class Report(Layout):
+    """
+    Manages inputs to NightLog Bokeh App that serves as an interface to DESI Observers to 
+    create an ongoing log of the activities of an observing night. The inputs are used to create
+    a report that is saved at the end of each night and emailed to the collaboration. 
+    """
     def __init__(self):
         Layout.__init__(self)
 
-        self.test = False 
+        self.test = False #Submission emails to tester only
 
-        self.report_type = None 
-        self.kp_zone = TimezoneInfo(utc_offset=-7*u.hour)
-
+        self.report_type = None #Updates when connect to report: LO, SO, NObs
+        self.save_telem_plots = False #Saves telemetry plots each time they are produced. They are saved during submission. This is time consuming (not recommended)
+        
         self.datefmt = DateFormatter(format="%m/%d/%Y %H:%M:%S")
         self.timefmt = DateFormatter(format="%m/%d %H:%M")
+        self.kp_zone = TimezoneInfo(utc_offset=-7*u.hour)
 
         # Figure out where the App is being run: KPNO or NERSC
         hostname = socket.gethostname()
@@ -66,14 +79,10 @@ class Report(Layout):
             self.conn = psycopg2.connect(host="db.replicator.dev-cattle.stable.spin.nersc.org", port="60042", database="desi_dev", user="desi_reader", password="reader")
         else:
             self.location = 'nersc'
-        print(os.environ['NL_DIR'])
-        self.nw_dir = os.environ['NW_DIR']
-        self.nl_dir = os.environ['NL_DIR']     
 
         self.intro_subtitle = Div(text="Connect to Night Log", css_classes=['subt-style'])
-        self.time_note = Div(text="<b> Note: </b> Enter all times as HH:MM (18:18 = 1818 = 6:18pm) in Kitt Peak local time. Either enter the time or hit the <b> Now </b> button if it just occured.", css_classes=['inst-style'])
-        self.exp_info = Div(text="Mandatory fields have an asterisk*.", css_classes=['inst-style'],width=500)
-        
+
+        #Image info
         self.img_upinst = Div(text="Include images in the Night Log by uploading a png image from your local computer. Select file, write a comment and click Add", css_classes=['inst-style'], width=1000)
         self.img_upinst2 = Div(text="           Choose image to include with comment:  ", css_classes=['inst-style'])
         self.img_upload = FileInput(accept=".png")
@@ -86,20 +95,20 @@ class Report(Layout):
         self.img_upload_problems = FileInput(accept=".png")
         self.img_upload_problems.on_change('value', self.upload_image_problems)
 
-        self.nl_file = None
+        #Determines if items need to be updated or new submission
         self.milestone_time = None
         self.plan_time = None
         self.full_time = None
 
-        self.DESI_Log = None
-        self.save_telem_plots = False
-        self.buffer = Div(text=' ')
-        self.my_name = 'None'
+        self.DESI_Log = None #nighlog.py object
+        
+        self.my_name = 'None' #Either report type or name of Nonobs
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
 
+    ##Util functions
     def clear_input(self, items):
         """ After submitting something to the log, this will clear the form.
         """
@@ -108,79 +117,6 @@ class Report(Layout):
                 item.value = ' '
         else:
             items.value = ' '
-
-    def get_exposure_list(self):
-        try:
-            current_exp = self.exp_select.value
-            dir_ = os.path.join(self.nw_dir,self.night)
-            exposures = []
-            for path, subdirs, files in os.walk(dir_): 
-                for s in subdirs: 
-                    exposures.append(s)  
-            x = list([str(int(e)) for e in list(exposures)])
-            x = np.sort(x)[::-1]
-            self.exp_select.options = list(x) 
-            if current_exp in ['',' ',np.nan,None]:
-                self.exp_select.value = x[0]
-            else:
-                self.exp_select.value = current_exp
-        except:
-            self.exp_select.options = []
-
-    def update_nl_list(self):
-        days = [f for f in os.listdir(self.nl_dir) if os.path.isdir(os.path.join(self.nl_dir,f))]
-        days_ = []
-        for day in days:
-            try:
-                int(day)
-                days_.append(day)
-            except:
-                pass
-        init_nl_list = np.sort([day for day in days_])[::-1][0:10]
-        self.date_init.options = list(init_nl_list)
-        self.date_init.value = init_nl_list[0]
-
-    def select_exp(self, attr, old, new):
-        self.exp_enter.value = self.exp_select.value 
-    
-    def add_all_to_bad_list(self):
-        self.bad_all = True
-        self.exp_layout_1.children[11] = self.exp_btn
-        self.bad_exp_add()
-        self.exp_alert.text = 'The whole exposure {} has been added to the bad exposure list'.format(self.bad_exp_val)
-        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
-
-    def add_some_to_bad_list(self):
-        self.bad_all = False
-        self.exp_layout_1.children[11] = self.bad_layout_2
-
-    def get_nightsum(self):
-        ns_date = self.ns_date_input.value
-        ns = {}          
-        ns_html = ''                                                                                                                
-        for dir_, sdir, f in os.walk(self.nl_dir): 
-            for x in f: 
-                if 'NightSummary' in x: 
-                    date = dir_.split('/')[-1]
-                    ns[date] = os.path.join(dir_,x)
-        try:
-            filen = ns[ns_date]
-            ns_html += open(filen).read()
-            self.ns_html.text = ns_html
-        except:
-            self.ns_html.text = 'Cannot find NightSummary for this date'
-
-    def ns_next_date(self):
-        current_date = datetime.datetime.strptime(self.ns_date_input.value,'%Y%m%d') 
-        next_night = current_date + timedelta(days=1)
-        self.ns_date_input.value = next_night.strftime('%Y%m%d')
-        self.get_nightsum()
-
-    def ns_last_date(self):
-        current_date = datetime.datetime.strptime(self.ns_date_input.value,'%Y%m%d')
-        last_night = current_date - timedelta(days=1)
-        self.ns_date_input.value = last_night.strftime('%Y%m%d')
-        self.get_nightsum()
 
     def get_time(self, time):
         """Returns strptime with utc. Takes time zone selection
@@ -214,16 +150,6 @@ class Report(Layout):
         dt = datetime.datetime.combine(d,time)
         return dt.strftime("%Y%m%dT%H:%M")
 
-    def get_night(self):
-        try:
-            date = datetime.datetime.strptime(self.date_init.value, '%Y%m%d')
-        except:
-            date = datetime.datetime.now().date()
-
-        self.night = date.strftime("%Y%m%d")
-        self.DESI_Log = nl.NightLog(self.night, self.location, self.logger)
-        self.logger.info('Obsday is {}'.format(self.night))
-
     def _dec_to_hm(self,hours):
         #dec in seconds
         seconds = hours*3600
@@ -240,6 +166,113 @@ class Report(Layout):
         seconds = dt.total_seconds()
         dec = seconds/3600
         return dec
+
+    def get_latest_val(self, l):
+        try:
+            x = list(l.dropna())[-1]
+        except:
+            x = np.nan
+        return x
+
+    def add_contributer_list(self):
+        cont_list = self.contributer_list.value
+        self.DESI_Log.add_contributer_list(cont_list)
+
+    def time_is_now(self):
+        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%H:%M")
+
+        tab = self.layout.active
+        time_input = self.time_tabs[tab]
+        try:
+            time_input.value = now
+        except:
+            return time_input
+
+    def add_time(self):
+        data = OrderedDict()
+
+        time_items = OrderedDict({'obs_time':self.obs_time,'test_time':self.test_time,'inst_loss':self.inst_loss_time,
+            'weather_loss':self.weather_loss_time,'tel_loss':self.tel_loss_time})
+        total = 0
+        for name, item in time_items.items():
+            try:
+                data[name] = float(item.value)
+                total += float(item.value)
+            except:
+                try:
+                    dec = self._hm_to_dec(str(item.value))
+                    data[name] = dec
+                    total += float(dec)
+                except:
+                    data[name] = 0
+                    total += 0
+
+        data['18deg'] = self.full_time
+        data['total'] = total
+        self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
+        df = pd.DataFrame(data, index=[0])
+        df.to_csv(self.DESI_Log.time_use, index=False)
+
+    ##Night Summary Page
+    def get_nightsum(self):
+        """Gets a Night Summary for display on the Night Summary tab. This does not require being connected to a NightLog
+        """
+        ns_date = self.ns_date_input.value
+        ns = {}          
+        ns_html = ''                                                                                                                
+        for dir_, sdir, f in os.walk(self.nl_dir): 
+            for x in f: 
+                if 'NightSummary' in x: 
+                    date = dir_.split('/')[-1]
+                    ns[date] = os.path.join(dir_,x)
+        try:
+            filen = ns[ns_date]
+            ns_html += open(filen).read()
+            self.ns_html.text = ns_html
+        except:
+            self.ns_html.text = 'Cannot find NightSummary for this date'
+
+    def ns_next_date(self):
+        current_date = datetime.datetime.strptime(self.ns_date_input.value,'%Y%m%d') 
+        next_night = current_date + timedelta(days=1)
+        self.ns_date_input.value = next_night.strftime('%Y%m%d')
+        self.get_nightsum()
+
+    def ns_last_date(self):
+        current_date = datetime.datetime.strptime(self.ns_date_input.value,'%Y%m%d')
+        last_night = current_date - timedelta(days=1)
+        self.ns_date_input.value = last_night.strftime('%Y%m%d')
+        self.get_nightsum()
+
+
+    ##Connecting to NightLog
+    def update_nl_list(self):
+        """Update list of available NightLogs to connect to. Takes these from the NightLog directory.
+        Only lists most recent 10 Night Summaries.
+        """
+        days = [f for f in os.listdir(self.nl_dir) if os.path.isdir(os.path.join(self.nl_dir, f))]
+        days_ = []
+        for day in days:
+            try:
+                int(day)
+                days_.append(day)
+            except:
+                pass
+        init_nl_list = np.sort([day for day in days_])[::-1][0:10]
+        self.date_init.options = list(init_nl_list)
+        self.date_init.value = init_nl_list[0]
+
+    def get_night(self):
+        """Gets date of NightLog selected and loads the nightlog object
+        """
+        try:
+            date = datetime.datetime.strptime(self.date_init.value, '%Y%m%d')
+        except:
+            date = datetime.datetime.now().date()
+
+        self.night = date.strftime("%Y%m%d")
+        self.DESI_Log = nl.NightLog(self.night, self.location, self.logger)
+        self.logger.info('Obsday is {}'.format(self.night))
 
     def connect_log(self):
         """Connect to Existing Night Log with Input Date
@@ -276,7 +309,7 @@ class Report(Layout):
             self.report_type = 'NObs'
         
        
-        #Connec to NightLog       
+        #Connect to NightLog       
         self.nl_file = self.DESI_Log.nightlog_html
         self.nl_subtitle.text = "Current DESI Night Log: {}".format(self.nl_file)
 
@@ -332,15 +365,6 @@ class Report(Layout):
             except Exception as e:
                 self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
 
-
-    def nonobs_entry_exp(self):
-        self.my_name = str(self.nonobs_input_exp.value)
-        self.layout.tabs[1] = self.exp_tab_0 
-
-    def nonobs_entry_prob(self):
-        self.my_name = str(self.nonobs_input_prob.value)
-        self.layout.tabs[2] = self.prob_tab
-
     def add_observer_info(self):
         """ Initialize Night Log with Input Date
         """
@@ -381,9 +405,9 @@ class Report(Layout):
             self.intro_layout.children[9] = self.update_layout
             self.update_log_status = True
 
-
     def display_current_header(self):
-
+        """Displays NL metadata on landing page
+        """
         path = self.DESI_Log._open_kpno_file_first(self.DESI_Log.header_html)
         nl_file = open(path, 'r')
         intro = '<h2> NightLog Info: {}</h2>'.format(self.night)
@@ -392,8 +416,11 @@ class Report(Layout):
         self.intro_txt.text = intro
         nl_file.closed
 
+
+    ##Current NightLog Page
     def current_nl(self):
-        #try:
+        """Updates NightLog on Current NightLog Page. Updated every 30 seconds
+        """
         now = datetime.datetime.now()
         self.DESI_Log.finish_the_night()
         path = self.DESI_Log.nightlog_html 
@@ -414,12 +441,39 @@ class Report(Layout):
         except:
             #print('Something wrong with making telemetry plots')
             return True 
-        #except Exception as e:
-        #    self.logger.info('current_nl Exception: %s' % str(e))
-        #    self.nl_alert.text = 'You are not connected to a Night Log'
-        #    return False
+
+    ##Exposures
+    def get_exposure_list(self):
+        """Gets the list of exposures transferred to the Nightwatch directory that can be reviewed.
+        Updates the exposure Select list.
+        Science exposures only.
+        """
+        try:
+            current_exp = self.exp_select.value
+            dir_ = os.path.join(self.nw_dir, self.night)
+
+            for path, subdirs, files in os.walk(dir_): 
+                exposures = list([str(int(s)) for s in subdirs])
+
+            exposures = np.sort(exposures)[::-1]
+            self.exp_select.options = list(exposures) 
+
+            #set displayed exposure in list 
+            if current_exp in ['', ' ', np.nan, None]:
+                self.exp_select.value = exposures[0]
+            else:
+                self.exp_select.value = current_exp
+
+        except:
+            self.exp_select.options = []
+
+    def select_exp(self, attr, old, new):
+        self.exp_enter.value = self.exp_select.value 
 
     def get_exp_list(self):
+        """Gets exposure list from SQL query. This includes all exposures, not just science exposures. 
+        Table at end of Current NightLog Page is updated
+        """
         try:
             exp_df = pd.read_sql_query(f"SELECT * FROM exposure WHERE night = '{self.night}'", self.conn)
             if len(exp_df.date_obs) >  0:
@@ -435,7 +489,141 @@ class Report(Layout):
         except Exception as e:
             self.exptable_alert.text = 'Cannot connect to Exposure Data Base. {}'.format(e)
 
+    def exp_to_html(self):
+        """Converts table of exposures to html
+        """
+        exp_df = pd.read_csv(self.DESI_Log.explist_file)
+        exp_df = exp_df[['date_obs','id','tileid','program','sequence','flavor','exptime','airmass','seeing']].sort_values(by='id',ascending=False) 
+        exp_df = exp_df.rename(columns={"date_obs": "Time", "id":
+        "Exp","tileid":'Tile','program':'Program','sequence':'Sequence','flavor':'Flavor','exptime':'Exptime','airmass':'Airmass','seeing':'Seeing'})
+        exp_html = exp_df.to_html()
+        return exp_html
+
+    def exp_add(self):
+        quality = None
+        if self.os_exp_option.active == 0: #Time
+            if self.exp_time.value not in [None, 'None'," ", ""]:
+                try:
+                    time = self.get_time(self.exp_time.value.strip())
+                    comment = self.exp_comment.value.strip()
+                    exp = None
+                except Exception as e:
+                    self.exp_alert.text = 'There is something wrong with your input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'),e)
+            else:
+                self.exp_alert.text = 'Fill in the time'
+                
+        elif self.os_exp_option.active == 1: #Exposure
+            try:
+                exp = int(float(self.exp_enter.value))
+            except Exception as e:
+                self.exp_alert.text = "Problem with the Exposure you Selected @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
+
+            comment = self.exp_comment.value.strip()
+            if str(self.exp_time.value.strip()) in ['',' ','None','nan']:
+                time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+            else:
+                try:
+                    time = self.get_time(self.exp_time.value.strip())
+                except:
+                    time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
+            print(self.exp_time.value.strip(), time)
+        if self.report_type == 'SO':
+            quality = self.quality_list[self.quality_btns.active]
+
+        if self.report_type == 'NObs':
+            your_name = self.my_name
+        elif self.report_type in ['LO','SO']:
+            your_name = self.report_type
+        #try:
+        img_name, img_data, preview = self.image_uploaded('comment')
+        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%H:%M")
+        data = [self.get_time(now), exp, quality, self.exp_comment.value.strip(), your_name]
+        self.DESI_Log.add_input(data, 'exp', img_name=img_name, img_data=img_data)
+        self.exp_alert.text = 'Last Input was made @ {}: {}'.format(datetime.datetime.now().strftime("%H:%M"),self.exp_comment.value)
+        #except Exception as e:
+        #    self.exp_alert.text = 'Error with your Input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'), e)
+        if quality == 'Bad':
+            self.exp_layout_1.children[11] = self.bad_layout_1
+            self.bad_exp_val = exp
+            self.bad_comment = self.exp_comment.value.strip()
+        else:
+            self.clear_input([self.exp_time, self.exp_enter, self.exp_comment])
+
+    #Add exposures to Bad Exposure List accessed by Data Team
+    def bad_exp_add(self):
+        exp = self.bad_exp_val
+        cams_dict = {0:'a',1:'b',2:'r',3:'z'}
+        if self.bad_all:
+            bad = True
+            cameras = None
+        elif self.bad_all == False:
+            bad = False
+            cameras = ''
+            for i, cams in enumerate([self.bad_cams_0, self.bad_cams_1, self.bad_cams_2, self.bad_cams_3, self.bad_cams_4, self.bad_cams_5, self.bad_cams_6, self.bad_cams_7, self.bad_cams_8, self.bad_cams_9]):
+                if len(cams.active) == 0:
+                    pass
+                else:
+                    for c in cams.active:
+                        cameras += '{}{}'.format(cams_dict[int(c)],i)
+            self.exp_layout_1.children[11] = self.exp_btn
+            self.exp_alert.text = 'Part of the exposure {} has been added to the bad exposure list'.format(exp)
+
+        comment = self.bad_comment
+        data = {}
+        data['NIGHT'] = [self.night]
+        data['EXPID'] = [exp]
+        data['BAD'] = [bad]
+        data['BADCAMS'] = [cameras]
+        data['COMMENT'] = [comment]
+        #self.bad_alert.text = 'Submitted Bad Exposure {} @ {}'.format(exp, datetime.datetime.now().strftime('%H:%M.%S'))
+        self.bad_cams_0.active = []
+        self.bad_cams_1.active = []
+        self.bad_cams_2.active = []
+        self.bad_cams_3.active = []
+        self.bad_cams_4.active = []
+        self.bad_cams_5.active = []
+        self.bad_cams_6.active = []
+        self.bad_cams_7.active = []
+        self.bad_cams_8.active = []
+        self.bad_cams_9.active = []
+        
+        self.DESI_Log.add_bad_exp(data)
+        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
+
+    
+    def add_all_to_bad_list(self):
+        """Adds all cameras to bad exposure list
+        """
+        self.bad_all = True
+        self.exp_layout_1.children[11] = self.exp_btn
+        self.bad_exp_add()
+        self.exp_alert.text = 'The whole exposure {} has been added to the bad exposure list'.format(self.bad_exp_val)
+        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
+
+    def add_some_to_bad_list(self):
+        """Adds only certain cameras to bad exposure list. This function prompts additional information
+        """
+        self.bad_all = False
+        self.exp_layout_1.children[11] = self.bad_layout_2
+
+
+    ##NonObserver Pages
+    def nonobs_entry_exp(self):
+        """Requests name of Non Observer for making comment on an exposure and changes the layout
+        """
+        self.my_name = str(self.nonobs_input_exp.value)
+        self.layout.tabs[1] = self.exp_tab_0 
+
+    def nonobs_entry_prob(self):
+        """Requests name of Non Observer for making comment on a problem and changes the layout
+        """
+        self.my_name = str(self.nonobs_input_prob.value)
+        self.layout.tabs[2] = self.prob_tab
+
+    ##Weather Page
     def get_weather(self):
+        """Updates weather page with comments made and saved in file
+        """
         if os.path.exists(self.DESI_Log.weather):
             obs_df = pd.read_csv(self.DESI_Log.weather)
             t = [datetime.datetime.strptime(tt, "%Y%m%dT%H:%M") for tt in obs_df['Time']]
@@ -444,7 +632,34 @@ class Report(Layout):
         else:
             pass
 
+    def weather_add(self):
+        """Adds table to Night Log
+        """
+        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%Y%m%dT%H:%M")
+        try:
+            self.make_telem_plots()
+            telem_df = pd.DataFrame(self.telem_source.data)
+            this_data = telem_df.iloc[-1]
+            desc = self.weather_desc.value
+            temp = self.get_latest_val(telem_df.temp) #.dropna())[-1] #list(telem_df)[np.isfinite(list(telem_df.temp))][-1] #this_data.temp
+            wind = self.get_latest_val(telem_df.wind_speed) #list(telem_df.wind_speed.dropna())[-1]
+            humidity = self.get_latest_val(telem_df.humidity) #list(telem_df.humidity.dropna())[-1] #this_data.humidity
+            seeing = self.get_latest_val(telem_df.seeing) #list(telem_df.seeing.dropna())[-1] #this_data.seeing
+            tput = self.get_latest_val(telem_df.tput) #list(telem_df.tput.dropna())[-1]
+            skylevel = self.get_latest_val(telem_df.skylevel)  #list(telem_df.skylevel.dropna())[-1]
+            data = [now, desc, temp, wind, humidity, seeing, tput, skylevel]
+
+        except: 
+            data = [now, self.weather_desc.value, None, None, None, None, None, None]
+            
+            self.weather_alert.text = 'Not connected to the telemetry DB. Only weather description will be recorded.'
+        df = self.DESI_Log.add_input(data,'weather')
+        self.clear_input([self.weather_desc])
+        self.get_weather()
+
     def get_telem_list(self, df, l, item):
+        """Util function to access DB table
+        """
         list_ = []
         for r in list(df[l]):
             try:
@@ -452,8 +667,10 @@ class Report(Layout):
             except:
                 list_.append(None)
         return list_
-        
+     
     def make_telem_plots(self):
+        """Makes SQL query to exposure database to update observing telemetry plots
+        """
         start = datetime.datetime.strptime(self.plots_start, "%Y%m%dT%H:%M")
         start_utc = start.astimezone(tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -463,17 +680,17 @@ class Report(Layout):
         exp_df = pd.read_sql_query(f"SELECT * FROM exposure WHERE date_obs > '{start_utc}' AND date_obs < '{end_utc}'", self.conn) #night = '{self.night}'", self.conn)
 
         telem_data = pd.DataFrame(columns =
-        ['time','exp','mirror_temp','truss_temp','air_temp','temp','humidity','wind_speed','airmass','exptime','seeing','tput','skylevel'])
+        ['time', 'exp', 'mirror_temp', 'truss_temp', 'air_temp', 'temp', 'humidity', 'wind_speed', 'airmass', 'exptime', 'seeing', 'tput', 'skylevel'])
         if len(exp_df) > 0:
             exp_df.sort_values('date_obs',inplace=True)
             telem_data.time = exp_df.date_obs.dt.tz_convert('US/Arizona')
             telem_data.exp = exp_df.id 
-            telem_data.mirror_temp = self.get_telem_list(exp_df, 'telescope','mirror_temp') #[r['mirror_temp'] for r in list(exp_df['telescope'])] #['mirror_temp']
-            telem_data.truss_temp = self.get_telem_list(exp_df, 'telescope','truss_temp') #[r['truss_temp'] for r in list(exp_df['telescope'])] #exp_df['telescope']['truss_temp']
-            telem_data.air_temp = self.get_telem_list(exp_df, 'telescope','air_temp')#[r['air_temp'] for r in list(exp_df['telescope'])] #['air_temp']
-            telem_data.temp = self.get_telem_list(exp_df, 'tower','temperature') #[r['temperature'] for r in list(exp_df['tower'])] #['temperature']
-            telem_data.humidity = self.get_telem_list(exp_df, 'tower','humidity') #[r['humidity'] for r in list(exp_df['tower'])] #['humidity']
-            telem_data.wind_speed = self.get_telem_list(exp_df, 'tower','wind_speed') #[r['wind_speed'] for r in list(exp_df['tower'])] #['wind_speed']
+            telem_data.mirror_temp = self.get_telem_list(exp_df, 'telescope','mirror_temp') 
+            telem_data.truss_temp = self.get_telem_list(exp_df, 'telescope','truss_temp') 
+            telem_data.air_temp = self.get_telem_list(exp_df, 'telescope','air_temp')
+            telem_data.temp = self.get_telem_list(exp_df, 'tower','temperature') 
+            telem_data.humidity = self.get_telem_list(exp_df, 'tower','humidity') 
+            telem_data.wind_speed = self.get_telem_list(exp_df, 'tower','wind_speed') 
             telem_data.airmass = exp_df.airmass
             telem_data.exptime = exp_df.exptime
             telem_data.seeing = exp_df.seeing
@@ -489,7 +706,8 @@ class Report(Layout):
             telem_data.skylevel = exp_df.skylevel
 
         self.telem_source.data = telem_data
-        #export_png(self.bk_plots)
+
+        #Matplotlib plots (not shown on Bokeh App). Saved once at end of night and sent with NightLog
         if self.save_telem_plots:
             plt.style.use('ggplot')
             plt.rcParams.update({'axes.labelsize': 'small'})
@@ -565,61 +783,13 @@ class Report(Layout):
             plt.savefig(self.DESI_Log.telem_plots_file)
             self.save_telem_plots = False
                 
-    def exp_to_html(self):
-        exp_df = pd.read_csv(self.DESI_Log.explist_file)
-        exp_df = exp_df[['date_obs','id','tileid','program','sequence','flavor','exptime','airmass','seeing']].sort_values(by='id',ascending=False) 
-        exp_df = exp_df.rename(columns={"date_obs": "Time", "id":
-        "Exp","tileid":'Tile','program':'Program','sequence':'Sequence','flavor':'Flavor','exptime':'Exptime','airmass':'Airmass','seeing':'Seeing'})
-        exp_html = exp_df.to_html()
-        return exp_html
-
-    def bad_exp_add(self):
-        exp = self.bad_exp_val
-        cams_dict = {0:'a',1:'b',2:'r',3:'z'}
-        if self.bad_all:
-            bad = True
-            cameras = None
-        elif self.bad_all == False:
-            bad = False
-            cameras = ''
-            for i, cams in enumerate([self.bad_cams_0, self.bad_cams_1, self.bad_cams_2, self.bad_cams_3, self.bad_cams_4, self.bad_cams_5, self.bad_cams_6, self.bad_cams_7, self.bad_cams_8, self.bad_cams_9]):
-                if len(cams.active) == 0:
-                    pass
-                else:
-                    for c in cams.active:
-                        cameras += '{}{}'.format(cams_dict[int(c)],i)
-            self.exp_layout_1.children[11] = self.exp_btn
-            self.exp_alert.text = 'Part of the exposure {} has been added to the bad exposure list'.format(exp)
-
-        comment = self.bad_comment
-        data = {}
-        data['NIGHT'] = [self.night]
-        data['EXPID'] = [exp]
-        data['BAD'] = [bad]
-        data['BADCAMS'] = [cameras]
-        data['COMMENT'] = [comment]
-        #self.bad_alert.text = 'Submitted Bad Exposure {} @ {}'.format(exp, datetime.datetime.now().strftime('%H:%M.%S'))
-        self.bad_cams_0.active = []
-        self.bad_cams_1.active = []
-        self.bad_cams_2.active = []
-        self.bad_cams_3.active = []
-        self.bad_cams_4.active = []
-        self.bad_cams_5.active = []
-        self.bad_cams_6.active = []
-        self.bad_cams_7.active = []
-        self.bad_cams_8.active = []
-        self.bad_cams_9.active = []
-        
-        self.DESI_Log.add_bad_exp(data)
-        self.clear_input([self.exp_time, self.exp_enter, self.exp_select, self.exp_comment])
-
+    ##Plans, Milestones and Checklists
     def plan_add_new(self):
+        """Identifies if a new submission or updating a submission.
+        If plan_time exists then an update occurs. Otherwise, a new submission
+        """
         self.plan_time = None
         self.plan_add()
-
-    def milestone_add_new(self):
-        self.milestone_time = None
-        self.milestone_add()
 
     def plan_add(self):
         if self.plan_time is None:
@@ -635,6 +805,10 @@ class Report(Layout):
         self.clear_input([self.plan_order, self.plan_input])
         self.plan_time = None
 
+    def milestone_add_new(self):
+        self.milestone_time = None
+        self.milestone_add()
+
     def milestone_add(self):
         if self.milestone_time is None:
             ts = datetime.datetime.now().strftime("%Y%m%dT%H:%M:%S")
@@ -647,6 +821,33 @@ class Report(Layout):
         self.clear_input([self.milestone_input, self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl])
         self.milestone_time = None
 
+    def check_add(self):
+        """add checklist time to Night Log
+        """
+        complete = self.checklist.active
+        check_time = datetime.datetime.now().strftime("%Y%m%dT%H:%M")
+        if len(complete) == len(self.checklist.labels):
+            data = [self.report_type, check_time, self.check_comment.value]
+            self.DESI_Log.add_input(data, 'checklist')
+            self.check_alert.text = "Checklist last submitted at {}".format(check_time[-5:])
+        else:
+            self.check_alert.text = "Must complete all tasks before submitting checklist"
+        self.clear_input(self.check_comment)
+        self.checklist.active = []
+
+    def summary_add(self):
+        if self.summary_input.value in ['',' ','nan','None']:
+            self.milestone_alert.text = 'Nothing written in the summary so not submitted. Try Loading again.'
+        else:
+            now = datetime.datetime.now().strftime("%H:%M")
+            half = self.summary_option.active
+            data = OrderedDict()
+            data['SUMMARY_{}'.format(half)] = self.summary_input.value
+            self.DESI_Log.add_summary(data)
+            self.milestone_alert.text = 'Summary Information Entered at {}: {}'.format(now, self.summary_input.value)
+            self.clear_input([self.summary_input])
+
+    ##Problems
     def prob_add(self):
         """Adds problem to nightlog
         """
@@ -671,102 +872,7 @@ class Report(Layout):
         #except Exception as e:
         #    self.prob_alert.text = "Problem with your Input: {} - {}".format(note, e)
 
-    def exp_add(self):
-        quality = None
-        if self.os_exp_option.active == 0: #Time
-            if self.exp_time.value not in [None, 'None'," ", ""]:
-                try:
-                    time = self.get_time(self.exp_time.value.strip())
-                    comment = self.exp_comment.value.strip()
-                    exp = None
-                except Exception as e:
-                    self.exp_alert.text = 'There is something wrong with your input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'),e)
-            else:
-                self.exp_alert.text = 'Fill in the time'
-                
-        elif self.os_exp_option.active == 1: #Exposure
-            try:
-                exp = int(float(self.exp_enter.value))
-            except Exception as e:
-                self.exp_alert.text = "Problem with the Exposure you Selected @ {}: {}".format(datetime.datetime.now().strftime('%H:%M'), e)
-
-            comment = self.exp_comment.value.strip()
-            if str(self.exp_time.value.strip()) in ['',' ','None','nan']:
-                time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
-            else:
-                try:
-                    time = self.get_time(self.exp_time.value.strip())
-                except:
-                    time = self.get_time(datetime.datetime.now().strftime("%H:%M"))
-            print(self.exp_time.value.strip(), time)
-        if self.report_type == 'SO':
-            quality = self.quality_list[self.quality_btns.active]
-
-        if self.report_type == 'NObs':
-            your_name = self.my_name
-        elif self.report_type in ['LO','SO']:
-            your_name = self.report_type
-        #try:
-        img_name, img_data, preview = self.image_uploaded('comment')
-        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%H:%M")
-        data = [self.get_time(now), exp, quality, self.exp_comment.value.strip(), your_name]
-        self.DESI_Log.add_input(data, 'exp', img_name=img_name, img_data=img_data)
-        self.exp_alert.text = 'Last Input was made @ {}: {}'.format(datetime.datetime.now().strftime("%H:%M"),self.exp_comment.value)
-        #except Exception as e:
-        #    self.exp_alert.text = 'Error with your Input @ {}: {}'.format(datetime.datetime.now().strftime('%H:%M'), e)
-        if quality == 'Bad':
-            self.exp_layout_1.children[11] = self.bad_layout_1
-            self.bad_exp_val = exp
-            self.bad_comment = self.exp_comment.value.strip()
-        else:
-            self.clear_input([self.exp_time, self.exp_enter, self.exp_comment])
-
-    def check_add(self):
-        """add checklist time to Night Log
-        """
-        complete = self.checklist.active
-        check_time = datetime.datetime.now().strftime("%Y%m%dT%H:%M")
-        if len(complete) == len(self.checklist.labels):
-            data = [self.report_type, check_time, self.check_comment.value]
-            self.DESI_Log.add_input(data, 'checklist')
-            self.check_alert.text = "Checklist last submitted at {}".format(check_time[-5:])
-        else:
-            self.check_alert.text = "Must complete all tasks before submitting checklist"
-        self.clear_input(self.check_comment)
-        self.checklist.active = []
-
-    def weather_add(self):
-        """Adds table to Night Log
-        """
-        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%Y%m%dT%H:%M")
-        try:
-            self.make_telem_plots()
-            telem_df = pd.DataFrame(self.telem_source.data)
-            this_data = telem_df.iloc[-1]
-            desc = self.weather_desc.value
-            temp = self.get_latest_val(telem_df.temp) #.dropna())[-1] #list(telem_df)[np.isfinite(list(telem_df.temp))][-1] #this_data.temp
-            wind = self.get_latest_val(telem_df.wind_speed) #list(telem_df.wind_speed.dropna())[-1]
-            humidity = self.get_latest_val(telem_df.humidity) #list(telem_df.humidity.dropna())[-1] #this_data.humidity
-            seeing = self.get_latest_val(telem_df.seeing) #list(telem_df.seeing.dropna())[-1] #this_data.seeing
-            tput = self.get_latest_val(telem_df.tput) #list(telem_df.tput.dropna())[-1]
-            skylevel = self.get_latest_val(telem_df.skylevel)  #list(telem_df.skylevel.dropna())[-1]
-            data = [now, desc, temp, wind, humidity, seeing, tput, skylevel]
-
-        except: 
-            data = [now, self.weather_desc.value, None, None, None, None, None, None]
-            
-            self.weather_alert.text = 'Not connected to the telemetry DB. Only weather description will be recorded.'
-        df = self.DESI_Log.add_input(data,'weather')
-        self.clear_input([self.weather_desc])
-        self.get_weather()
-
-    def get_latest_val(self, l):
-        try:
-            x = list(l.dropna())[-1]
-        except:
-            x = np.nan
-        return x
-
+    ##Images
     def image_uploaded(self, mode='comment'):
         img_data = None
         img_name = None
@@ -791,6 +897,22 @@ class Report(Layout):
         preview = '<img src="%s" width=%s height=%s alt="Uploaded image %s">\n' % (self.image_location_on_server,str(width),str(height),img_name)
         return img_name, img_data, preview
 
+    def upload_image(self, attr, old, new):
+        self.logger.info(f'Local image file upload: {self.img_upload.filename}')
+
+    def upload_image_comments_os(self, attr, old, new):
+        self.logger.info(f'Local image file upload (OS comments): {self.img_upload_comments_os.filename}')
+
+    def upload_image_comments_other(self, attr, old, new):
+        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_comments_other.filename}')
+
+    def upload_image_comments_dqs(self, attr, old, new):
+        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_comments_dqs.filename}')
+
+    def upload_image_problems(self, attr, old, new):
+        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_problems.filename}')
+
+    ##Deleting Submissions
     def plan_delete(self):
         time = self.plan_time
         self.DESI_Log.delete_item(time, 'plan')
@@ -818,6 +940,7 @@ class Report(Layout):
         self.clear_input([self.prob_time, self.prob_input, self.prob_alarm, self.prob_action])
 
         
+    ##Loading Submissions
     def plan_load(self):
         try:
             b, item = self.DESI_Log.load_index(self.plan_order.value, 'plan')
@@ -828,7 +951,6 @@ class Report(Layout):
                 self.plan_alert.text = "That plan item doesn't exist yet. {}".format(item)
         except Exception as e:
             self.plan_alert.text = "Issue with loading that plan item: {}".format(e)
-
 
     def milestone_load(self):
         try:
@@ -894,47 +1016,6 @@ class Report(Layout):
         except Exception as e:
             self.prob_alert.text = "Issue with loading that problem: {}".format(e)
 
-    def add_contributer_list(self):
-        cont_list = self.contributer_list.value
-        self.DESI_Log.add_contributer_list(cont_list)
-
-    def add_time(self):
-        data = OrderedDict()
-
-        time_items = OrderedDict({'obs_time':self.obs_time,'test_time':self.test_time,'inst_loss':self.inst_loss_time,
-            'weather_loss':self.weather_loss_time,'tel_loss':self.tel_loss_time})
-        total = 0
-        for name, item in time_items.items():
-            try:
-                data[name] = float(item.value)
-                total += float(item.value)
-            except:
-                try:
-                    dec = self._hm_to_dec(str(item.value))
-                    data[name] = dec
-                    total += float(dec)
-                except:
-                    data[name] = 0
-                    total += 0
-
-        data['18deg'] = self.full_time
-        data['total'] = total
-        self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
-        df = pd.DataFrame(data, index=[0])
-        df.to_csv(self.DESI_Log.time_use, index=False)
-
-    def summary_add(self):
-        if self.summary_input.value in ['',' ','nan','None']:
-            self.milestone_alert.text = 'Nothing written in the summary so not submitted. Try Loading again.'
-        else:
-            now = datetime.datetime.now().strftime("%H:%M")
-            half = self.summary_option.active
-            data = OrderedDict()
-            data['SUMMARY_{}'.format(half)] = self.summary_input.value
-            self.DESI_Log.add_summary(data)
-            self.milestone_alert.text = 'Summary Information Entered at {}: {}'.format(now, self.summary_input.value)
-            self.clear_input([self.summary_input])
-
     def summary_load(self):
         half = self.summary_option.active
         f = self.DESI_Log.summary_file
@@ -948,31 +1029,7 @@ class Report(Layout):
         else:
             self.milestone_alert.text = 'That summary does not yet exist'
 
-    def upload_image(self, attr, old, new):
-        self.logger.info(f'Local image file upload: {self.img_upload.filename}')
-
-    def upload_image_comments_os(self, attr, old, new):
-        self.logger.info(f'Local image file upload (OS comments): {self.img_upload_comments_os.filename}')
-
-    def upload_image_comments_other(self, attr, old, new):
-        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_comments_other.filename}')
-
-    def upload_image_comments_dqs(self, attr, old, new):
-        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_comments_dqs.filename}')
-
-    def upload_image_problems(self, attr, old, new):
-        self.logger.info(f'Local image file upload (Other comments): {self.img_upload_problems.filename}')
-
-    def time_is_now(self):
-        now = datetime.datetime.now().astimezone(tz=self.kp_zone).strftime("%H:%M")
-
-        tab = self.layout.active
-        time_input = self.time_tabs[tab]
-        try:
-            time_input.value = now
-        except:
-            return time_input
-
+    ##NightLog Submission
     def nl_submit(self):
 
         if not self.current_nl():
@@ -1041,7 +1098,7 @@ class Report(Layout):
             if self.test:
                 self.email_nightsum(user_email = ["parfa30@gmail.com","parkerf@berkeley.edu"])
             else:
-                self.email_nightsum(user_email = ["parfa30@gmail.com","satya.gontcho@gmail.com","desi-nightlog@desi.lbl.gov"])
+                self.email_nightsum(user_email = ["desi-nightlog@desi.lbl.gov"])
 
             self.submit_text.text = "Night Log posted to eLog and emailed to collaboration at {}".format(datetime.datetime.now().strftime("%Y%m%d%H:%M")) + '</br>'
 

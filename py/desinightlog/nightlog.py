@@ -1,6 +1,6 @@
 """
 Created on April 9, 2020
-@author: Satya Gontcho A Gontcho
+@author: Satya Gontcho A Gontcho & Parker Fagrelius
 """
 
 import os
@@ -11,9 +11,6 @@ import numpy as np
 from datetime import datetime,timezone
 from collections import OrderedDict
 
-from astropy.time import TimezoneInfo
-import astropy.units.si as u
-
 
 class NightLog(object):
     """
@@ -23,11 +20,13 @@ class NightLog(object):
             in the proper formatting (textile for the eLog) while providing a platform to
             follow live the night progress.
 
-            PKL files unique but combination of them is what should be the same for both pages. So all _file
-            should be good.
-            #write_pkl
-            #make combined df
-            #then write its file
+        This program takes inputs from Report(), saves them in csv files, and then 
+        writes/updates the NightLog Report with those inputs.
+
+        The whole NightLog is rewritten every ~30 seconds.
+
+        Handles inputs from Kitt Peak and NERSC and combines them
+
     """
 
     def __init__(self, obsday, location, logger):
@@ -36,42 +35,38 @@ class NightLog(object):
         """
         self.obsday = obsday #YYYYMMDD
         self.location = location
+        self.logger = logger
 
-        self.root_dir = os.path.join(os.environ['NL_DIR'],self.obsday)
+        #Directory structure 
+        self.root_dir = os.path.join(os.environ['NL_DIR'], self.obsday)
         self.image_dir = os.path.join(self.root_dir,'images')
         self.obs_dir = os.path.join(self.root_dir,"Observers")
 
+        #Final reports
         self.header_html = os.path.join(self.root_dir,'header_{}.html'.format(self.location))
         self.nightlog_html = os.path.join(self.root_dir,'nightlog_{}.html'.format(self.location))
 
+        #Files that collect inputs from Report()
         self.obs_pb = os.path.join(self.obs_dir,'problems_{}.csv'.format(self.location))
-
         self.objectives = os.path.join(self.obs_dir,'objectives_{}.csv'.format(self.location))
         self.milestone = os.path.join(self.obs_dir,'milestones_{}.csv'.format(self.location))
         self.obs_cl = os.path.join(self.obs_dir,'checklist_{}.csv'.format(self.location))
-
         self.obs_exp = os.path.join(self.obs_dir,'exposures_{}.csv'.format(self.location))
-
         self.weather = os.path.join(self.obs_dir,'weather_{}.csv'.format(self.location))
         self.bad_exp_list = os.path.join(self.obs_dir,'bad_exp_list_{}.csv'.format(self.location))
-
-        self.meta_json = os.path.join(self.root_dir,'nightlog_meta_{}.json'.format(self.location))
-        self.image_file = os.path.join(self.image_dir, 'image_list_{}'.format(self.location))
-        self.upload_image_file = os.path.join(self.image_dir, 'upload_image_list_{}'.format(self.location))
         self.contributer_file = os.path.join(self.root_dir, 'contributer_file_{}'.format(self.location))
         self.summary_file = os.path.join(self.root_dir, 'summary_file_{}.csv'.format(self.location))
         self.time_use = os.path.join(self.root_dir, 'time_use_{}.csv'.format(self.location))
+
+        #Other files
+        self.meta_json = os.path.join(self.root_dir,'nightlog_meta_{}.json'.format(self.location))
+        self.image_file = os.path.join(self.image_dir, 'image_list_{}'.format(self.location))
+        self.upload_image_file = os.path.join(self.image_dir, 'upload_image_list_{}'.format(self.location))
         self.explist_file = os.path.join(self.root_dir, 'explist_{}.csv'.format(self.location))
         self.telem_plots_file = os.path.join(self.root_dir, 'telem_plots_{}.png'.format(self.location))
 
         # Set this if you want to allow for replacing lines with a timestamp or not
         self.replace = True
-
-        self.utc = TimezoneInfo()
-        self.kp_zone = TimezoneInfo(utc_offset=-7*u.hour)
-
-        self.logger = logger
-
 
     def initializing(self):
         """ Creates the folders where all the files used to create the Night Log will be containted.
@@ -92,6 +87,8 @@ class NightLog(object):
             return True
 
     def write_time(self, time_string, kp_only=False):
+        """Maintains a format for displaying the time
+        """
         try:
             dt = datetime.strptime(time_string, "%Y%m%dT%H:%M")
             dt_utc = dt.astimezone(tz=timezone.utc)
@@ -107,10 +104,10 @@ class NightLog(object):
         """
             Operations Scientist lists the personal present, ephemerids and weather conditions at sunset.
         """
-        items = ['LO_firstname_1','LO_lastname_1','LO_firstname_2','LO_lastname_2','OA_firstname','OA_lastname',
-        'so_1_firstname','so_1_lastname','so_2_firstname','so_2_lastname',
-        'time_sunset','time_sunrise','time_moonrise','time_moonset','illumination','dusk_10_deg',
-        'dusk_18_deg','dawn_18_deg','dusk_12_deg','dawn_12_deg','dawn_10_deg','dqs_1','dqs_last']
+        items = ['LO_firstname_1', 'LO_lastname_1', 'LO_firstname_2', 'LO_lastname_2', 'OA_firstname', 'OA_lastname',
+        'so_1_firstname', 'so_1_lastname', 'so_2_firstname', 'so_2_lastname',
+        'time_sunset', 'time_sunrise', 'time_moonrise', 'time_moonset', 'illumination', 'dusk_10_deg',
+        'dusk_18_deg', 'dawn_18_deg', 'dusk_12_deg', 'dawn_12_deg', 'dawn_10_deg', 'dqs_1', 'dqs_last']
         meta_dict = {}
         for item in items:
             try:
@@ -121,6 +118,9 @@ class NightLog(object):
             json.dump(meta_dict, fp)
 
     def _open_kpno_file_first(self, filen):
+        """If there is a file created at Kitt Peak and NERSC, in certain cases the KP file will trump the file
+        created at NERSC
+        """
         loc = os.path.splitext(filen)[0].split('_')[-1]
         new_filen = filen.replace(loc, 'kpno')
         if os.path.exists(new_filen):
@@ -129,6 +129,8 @@ class NightLog(object):
             return filen
 
     def _combine_compare_csv_files(self, filen, bad=False):
+        """This combines inputs at NERSC and Kitt Peak
+        """
         loc = os.path.splitext(filen)[0].split('_')[-1]
         if loc == 'kpno':
             other_filen = filen.replace(loc, 'nersc')
@@ -184,6 +186,9 @@ class NightLog(object):
         return file
 
     def delete_item(self, time, tab, user=None):
+        """Based on a timestamp and prompted by Report(), will delete an item from the corresponding
+        csv file so it is no longer written on the NightLog
+        """
         if tab == 'plan':
             file = self.objectives
         if tab == 'milestone':
@@ -199,7 +204,10 @@ class NightLog(object):
         df.reset_index(inplace=True, drop=True)
         df.to_csv(file, index=False)
 
+    ##Add items to csv files that are then written to NightLog
     def add_input(self, data, tab, img_name=None, img_data=None):
+        """Adds items input in Report() to a csv file
+        """
         if tab == 'plan':
             cols =['Time', 'Objective']
             file = self.objectives
@@ -229,8 +237,129 @@ class NightLog(object):
                 self._upload_and_save_image(img_data, img_name)
         
         df = self.write_csv(data, cols, file)
+
+    def add_summary(self, data):
+        """Adds summary inputs to csv file
+        """
+        if not os.path.exists(self.summary_file):
+            df = pd.DataFrame(columns=['SUMMARY_0','SUMMARY_1'])
+        else:
+            df = pd.read_csv(self.summary_file)
+        for row, value in data.items():
+            df[row] = df[row].astype('str')
+            df.at[0,row] = str(value)
+
+        df.to_csv(self.summary_file, index=False)
+
+    def add_bad_exp(self, data):
+        if not os.path.exists(self.bad_exp_list):
+            df = pd.DataFrame(columns=['NIGHT','EXPID','BAD','BADCAMS','COMMENT'])
+            df.to_csv(self.bad_exp_list, index=False)
+        else:
+            df = pd.read_csv(self.bad_exp_list)
+
+        this_df = pd.DataFrame.from_dict(data)
+        df = pd.concat([df, this_df])
+        df = df.drop_duplicates(subset=['EXPID'], keep='last')
+        df = df.astype({"NIGHT":int, "EXPID": int,"BAD":bool,"BADCAMS":str,"COMMENT":str})
+        df.to_csv(self.bad_exp_list, index=False)
+
+    def check_exp_times(self, file):
+        """Check if meta data about an exposure exists in database and add that info to comment. If there is a match, then
+        the time of the exposure will be listed as that in the DB rather than what was manually input
+        """
+        if os.path.exists(file):
+            df = pd.read_csv(file)
+            if os.path.exists(self.explist_file):
+                exp_df = pd.read_csv(self.explist_file)
+                for index, row in df.iterrows():
+                    try:
+                        e_ = exp_df[exp_df.id == int(row['Exp_Start'])]
+                        time = pd.to_datetime(e_.date_obs).dt.strftime('%Y%m%dT%H:%M').values[0]  
+                        if str(time) == 'nan': # in [np.nan,'nan']:
+                            pass
+                        else:
+                            df.at[index, 'Time'] = time
+                    except:
+                        pass
+                df.to_csv(file,index=False)
         
 
+    ##Loads items to Report() based on timestamp/exposure number. These values are pulled from the csv files
+    def load_index(self, idx, page):
+        if page == 'milestone':
+            the_path = self.milestone
+        if page == 'plan':
+            the_path = self.objectives
+        df = self._combine_compare_csv_files(the_path)
+
+        try:
+
+            item = df[df.index == int(idx)]
+            item = item.iloc[0]
+            if len(item) > 0:
+                return True, item
+            else:
+                return False, item
+        except Exception as e:
+            return False, e
+
+    def load_exp(self, exp):
+        df = self._combine_compare_csv_files(self.obs_exp)
+        try:
+            item = df[df.Exp_Start == float(exp)]
+            item = item.iloc[0]
+            if len(item) > 0:
+                return True, item
+            else:
+                return False, item
+        except Exception as e:
+            print(e)
+            return False, e
+
+    def load_timestamp(self, time, user, exp_type):
+
+        files = {'exposure':self.obs_exp, 'problem':self.obs_pb}
+
+        the_path = files[exp_type]
+
+        df = self._combine_compare_csv_files(the_path)
+        try:
+            item = df[df.Time == time]
+            item = item.iloc[0]
+
+            if len(item) > 0:
+                return True, item
+            else:
+                return False, item
+        except Exception as e:
+            return False, e
+
+    def _upload_and_save_image(self, img_data, img_name):
+        import base64
+        # create images directory if necessary
+        if not os.path.exists(self.image_dir):
+            os.makedirs(self.image_dir)
+        img_file = os.path.join(self.image_dir, img_name)
+        with open(img_file, "wb") as fh:
+            fh.write(base64.decodebytes(img_data))
+
+    def _write_image_tag(self, img_file, img_name, comments = None, width=400, height=400):
+        # server should be made a class variable
+        server = f'http://desi-www.kpno.noao.edu:8090/nightlogs/{self.obsday}/images'
+        img_file.write("<br/>")
+        #img_file.write("h5. %s<br/>" % img_name)
+        img_file.write('<img src="%s/%s" width=%s height=%s alt="Uploaded image %s"><br/>' % (server,img_name,str(width),str(height),img_name))
+        if isinstance(comments, str):
+            img_file.write("<br>{}<br/>".format(comments))
+
+    def add_contributer_list(self, contributers):
+        file = open(self.contributer_file, 'w')
+        file.write(contributers)
+        file.write("<br/>")
+        file.close()
+
+    ##Write NightLog
     def write_plan(self, filen):
         df = self._combine_compare_csv_files(self.objectives)
         if df is not None:
@@ -275,7 +404,6 @@ class NightLog(object):
                 filen.write("</li>")
             filen.write("</ul>")
 
-
     def write_checklist(self, filen):
         df_obs = self._combine_compare_csv_files(self.obs_cl)
         if df_obs is not None:
@@ -288,7 +416,6 @@ class NightLog(object):
                 else:
                     filen.write("<li> {}</li>".format(self.write_time(row['Time'],kp_only=True)))
             filen.write("</ul>")
-
 
     def write_weather(self, filen):
         """Operations Scientist adds information regarding the weather.
@@ -332,23 +459,6 @@ class NightLog(object):
                     self._write_image_tag(filen, row['img_name'])
                 filen.write('<br/>')
                 filen.write('<br/>')
-
-    def check_exp_times(self, file):
-        if os.path.exists(file):
-            df = pd.read_csv(file)
-            if os.path.exists(self.explist_file):
-                exp_df = pd.read_csv(self.explist_file)
-                for index, row in df.iterrows():
-                    try:
-                        e_ = exp_df[exp_df.id == int(row['Exp_Start'])]
-                        time = pd.to_datetime(e_.date_obs).dt.strftime('%Y%m%dT%H:%M').values[0]  
-                        if str(time) == 'nan': # in [np.nan,'nan']:
-                            pass
-                        else:
-                            df.at[index, 'Time'] = time
-                    except:
-                        pass
-                df.to_csv(file,index=False)
 
     def write_exposure(self, file):
         if os.path.exists(self.explist_file):
@@ -442,81 +552,7 @@ class NightLog(object):
                     pass
             file.write('<br/>')
 
-    def load_index(self, idx, page):
-        if page == 'milestone':
-            the_path = self.milestone
-        if page == 'plan':
-            the_path = self.objectives
-        df = self._combine_compare_csv_files(the_path)
-
-        try:
-
-            item = df[df.index == int(idx)]
-            item = item.iloc[0]
-            if len(item) > 0:
-                return True, item
-            else:
-                return False, item
-        except Exception as e:
-            return False, e
-
-    def load_exp(self, exp):
-        df = self._combine_compare_csv_files(self.obs_exp)
-        try:
-            item = df[df.Exp_Start == float(exp)]
-            item = item.iloc[0]
-            if len(item) > 0:
-                return True, item
-            else:
-                return False, item
-        except Exception as e:
-            print(e)
-            return False, e
-
-    def load_timestamp(self, time, user, exp_type):
-
-        files = {'exposure':self.obs_exp, 'problem':self.obs_pb}
-
-        the_path = files[exp_type]
-
-        df = self._combine_compare_csv_files(the_path)
-        try:
-            item = df[df.Time == time]
-            item = item.iloc[0]
-
-            if len(item) > 0:
-                return True, item
-            else:
-                return False, item
-        except Exception as e:
-            return False, e
-
-    def _upload_and_save_image(self, img_data, img_name):
-        import base64
-        # create images directory if necessary
-        if not os.path.exists(self.image_dir):
-            os.makedirs(self.image_dir)
-        img_file = os.path.join(self.image_dir, img_name)
-        with open(img_file, "wb") as fh:
-            fh.write(base64.decodebytes(img_data))
-
-    def _write_image_tag(self, img_file, img_name, comments = None, width=400, height=400):
-        # server should be made a class variable
-        server = f'http://desi-www.kpno.noao.edu:8090/nightlogs/{self.obsday}/images'
-        img_file.write("<br/>")
-        #img_file.write("h5. %s<br/>" % img_name)
-        img_file.write('<img src="%s/%s" width=%s height=%s alt="Uploaded image %s"><br/>' % (server,img_name,str(width),str(height),img_name))
-        if isinstance(comments, str):
-            img_file.write("<br>{}<br/>".format(comments))
-
-    def add_contributer_list(self, contributers):
-        file = open(self.contributer_file, 'w')
-        file.write(contributers)
-        file.write("<br/>")
-        file.close()
-
     def write_time_summary(self, file_nl):
-
         f = self._open_kpno_file_first(self.time_use)
         if os.path.exists(f):
             df = pd.read_csv(f)
@@ -545,21 +581,6 @@ class NightLog(object):
         else:
             pass
 
-
-    def add_summary(self, data):
-
-        if not os.path.exists(self.summary_file):
-            df = pd.DataFrame(columns=['SUMMARY_0','SUMMARY_1'])
-        else:
-            df = pd.read_csv(self.summary_file)
-        for row, value in data.items():
-            df[row] = df[row].astype('str')
-            df.at[0,row] = str(value)
-
-
-        df.to_csv(self.summary_file, index=False)
-
-
     def write_summary(self, file_nl):
         f = self._open_kpno_file_first(self.summary_file)
         if os.path.exists(f):
@@ -576,20 +597,6 @@ class NightLog(object):
                 file_nl.write("<br/>")
             except Exception as e:
                 self.logger.info('writing summary: {}'.format(e))
-    
-
-    def add_bad_exp(self, data):
-        if not os.path.exists(self.bad_exp_list):
-            df = pd.DataFrame(columns=['NIGHT','EXPID','BAD','BADCAMS','COMMENT'])
-            df.to_csv(self.bad_exp_list, index=False)
-        else:
-            df = pd.read_csv(self.bad_exp_list)
-
-        this_df = pd.DataFrame.from_dict(data)
-        df = pd.concat([df, this_df])
-        df = df.drop_duplicates(subset=['EXPID'], keep='last')
-        df = df.astype({"NIGHT":int, "EXPID": int,"BAD":bool,"BADCAMS":str,"COMMENT":str})
-        df.to_csv(self.bad_exp_list, index=False)
 
     def write_bad_exp(self, file_nl):
         df = self._combine_compare_csv_files(self.bad_exp_list, bad=True)

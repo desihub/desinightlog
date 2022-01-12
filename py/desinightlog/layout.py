@@ -3,7 +3,7 @@ Created on July 21, 2021
 
 @author: Parker Fagrelius
 
-details all layout for the DNI Reports
+Creates layout of bokeh pages for the DNI Report
 
 """
 import os
@@ -17,60 +17,71 @@ from bokeh.models.widgets import Panel
 from bokeh.models.widgets.tables import DataTable, TableColumn
 from bokeh.plotting import figure
 
-import nightlog as nl
-
 class Layout():
     def __init__(self):
-        self.line = Div(text='-----------------------------------------------------------------------------------------------------------------------------', width=1000)
-        self.line2 = Div(text='-----------------------------------------------------------------------------------------------------------------------------', width=1000)
-        self.lo_names = ['None ','Liz Buckley-Geer','Ann Elliott','Parker Fagrelius','Satya Gontcho A Gontcho','James Lasker','Martin Landriau','Claire Poppett','Michael Schubnell','Luke Tyas','Other ']
-        self.oa_names = ['None ','Karen Butler','Amy Robertson','Anthony Paat','Thaxton Smith','Dave Summers','Doug Williams','Other ']
-        self.connect_txt = Div(text=' ', css_classes=['alert-style'])
-        self.intro_txt = Div(text=' ')
-        self.comment_txt = Div(text=" ", css_classes=['inst-style'], width=1000)
 
+        self.nw_dir = os.environ['NW_DIR'] #nightwatch directory
+        self.nl_dir = os.environ['NL_DIR'] #nightlog directory
 
+        self.lo_names = ['None ', 'Liz Buckley-Geer', 'Ann Elliott', 'Satya Gontcho A Gontcho', 'James Lasker',
+                        'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
+        self.oa_names = ['None ', 'Karen Butler', 'Amy Robertson', 'Anthony Paat', 'Thaxton Smith', 
+                        'Dave Summers','Doug Williams','Other ']
+
+        #Used on multiple pages
         self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
         self.now_btn = Button(label='Now', css_classes=['now_button'], width=75)
-
-        self.full_time_text = Div(text='Total time between 18 deg. twilights (hrs): ', width=100) #Not on intro slide, but needed
-
-        self.nw_dir = os.environ['NW_DIR']
-        self.nl_dir = os.environ['NL_DIR']  
+        self.time_note = Div(text="<b> Note: </b> Enter all times as HH:MM (18:18 = 1818 = 6:18pm) in Kitt Peak local time. Either enter the time or hit the <b> Now </b> button if it just occured.", css_classes=['inst-style'])
+        
+        #Cannot repeat widgets in a layout
+        self.buffer = Div(text=' ')
+        self.line = Div(text='-----------------------------------------------------------------------------------------------------------------------------', width=1000)
+        self.line2 = Div(text='-----------------------------------------------------------------------------------------------------------------------------', width=1000)
 
     def get_intro_layout(self):
+        """ Landing page and where you connect to a NightLog
+        """
         self.contributer_list = TextAreaInput(placeholder='Contributer names (include all)', rows=2, cols=1, title='Names of all contributers')
         self.contributer_btn = Button(label='Update Contributer List', css_classes=['add_button'], width=200)
 
         self.connect_hdr = Div(text="Connect to Night Log", css_classes=['subt-style'], width=800)
-        self.obs_type = RadioButtonGroup(labels=["Lead Observer", "Support Observer", "Non-Observer"], css_classes=['add_button'], active=None)
         self.connect_btn = Button(label="Connect to  Night Log", css_classes=['connect_button'], width=200)
+        self.obs_type = RadioButtonGroup(labels=["Lead Observer", "Support Observer", "Non-Observer"], css_classes=['add_button'], active=None)
         self.date_init = Select(title="Night Logs")
 
+        #placeholders
+        self.intro_txt = Div(text=' ')
+        self.connect_txt = Div(text=' ', css_classes=['alert-style'])
+
+        #observers names
         self.so_name_1 = TextInput(title='Support Observing Scientist 1', placeholder='Sally Ride')
         self.so_name_2 = TextInput(title='Support Observing Scientist 2', placeholder="Mae Jemison")
         self.LO_1 = Select(title='Lead Observer 1', value='None', options=self.lo_names)
         self.LO_2 = Select(title='Lead Observer 2', value='None', options=self.lo_names)
         self.OA = Select(title='Observing Assistant', value='Choose One', options=self.oa_names)
 
-        self.update_log_status = False
+        #updating metadata
+        self.update_log_status = False #This boolean identifies if the meta data for a given NightLog needs to be updated. It is changed in report.py
         self.init_btn = Button(label="Update Night Log Info", css_classes=['init_button'], width=200)
         self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1, self.LO_2], self.OA, self.init_btn])
 
+        #layout
         self.intro_layout = layout(children=[self.buffer,
-                                    self.title,
-                                    [self.page_logo, self.instructions],
-                                    self.connect_hdr,
-                                    [self.date_init, [self.obs_type, self.connect_btn]],
-                                    self.connect_txt,
-                                    self.line,
-                                    [self.contributer_list, self.contributer_btn],
-                                    self.line2,
-                                    self.init_btn,
-                                    self.intro_txt], width=1000)
+                                            self.title,
+                                            [self.page_logo, self.instructions],
+                                            self.connect_hdr,
+                                            [self.date_init, [self.obs_type, self.connect_btn]],
+                                            self.connect_txt,
+                                            self.line,
+                                            [self.contributer_list, self.contributer_btn],
+                                            self.line2,
+                                            self.init_btn,
+                                            self.intro_txt], width=1000)
         self.intro_tab = Panel(child=self.intro_layout, title="Connect")
 
     def get_nonobs_layout(self):
+        """Unique layouts for Non observers. All Non observers must input their name.
+        """
         inst = """If you want to make an entry into the NightLog, please enter your name"""
         self.nonobs_inst = Div(text=inst, css_classes=['inst-style'], width=1000)
         self.nonobs_input_exp = TextInput(title='Your Name', placeholder='Vera Rubin', width=150)
@@ -82,11 +93,15 @@ class Layout():
         self.nonobs_layout_prob = layout([self.nonobs_inst, self.nonobs_input_prob, self.nonobs_btn_prob], width=1000)
 
     def get_plan_layout(self):
+        """Page for entering items from the observing plan
+        """
         self.plan_subtitle = Div(text="Night Plan", css_classes=['subt-style'])
         inst = """<ul>
-        <li>Add the major elements of the night plan found at the link below in the order expected for their completion using the <b>Add/New</b> button. Do NOT enter an index for new items - they will be generated.</li>
+        <li>Add the major elements of the night plan found at the link below in the order expected for their completion using the <b>Add/New</b> button. 
+        Do NOT enter an index for new items - they will be generated.</li>
         <li>You can recall submitted plans using their index, as found on the Current DESI Night Log tab.</li>
-        <li>If you'd like to modify a submitted plan item, <b>Load</b> the index (these can be found on the Current NL), make your modifications, and then press <b>Update</b>.</li>
+        <li>If you'd like to modify a submitted plan item, <b>Load</b> the index (these can be found on the Current NL), 
+        make your modifications, and then press <b>Update</b>.</li>
         </ul>
         """
         self.plan_inst = Div(text=inst, css_classes=['inst-style'], width=1000)
@@ -99,6 +114,7 @@ class Layout():
         self.plan_delete_btn = Button(label='Delete', css_classes=['delete_button'], width=150)
         self.plan_alert = Div(text=' ', css_classes=['alert-style'])
 
+        #layout
         plan_layout = layout([self.buffer,
                             self.title,
                             self.plan_subtitle,
@@ -110,6 +126,8 @@ class Layout():
         self.plan_tab = Panel(child=plan_layout, title="Night Plan")
 
     def get_milestone_layout(self):
+        """Page to input milestones, write end of shift summaries, and enter time use
+        """
         self.milestone_subtitle = Div(text="Milestones & Major Accomplishments", css_classes=['subt-style'])
         inst = """<ul>
         <li>Record any major milestones or accomplishments that occur throughout a night. These should correspond with the major elements input on the 
@@ -128,7 +146,8 @@ class Layout():
         </ul>
         </ul>
         """
-        self.milestone_inst = Div(text=inst, css_classes=['inst-style'],width=1000)
+        #Milestones
+        self.milestone_inst = Div(text=inst, css_classes=['inst-style'], width=1000)
         self.milestone_input = TextAreaInput(placeholder="Description", title="Enter a Milestone:", rows=2, cols=3, max_length=5000, width=800)
         self.milestone_exp_start = TextInput(title ='Exposure Start', placeholder='12345',  width=200)
         self.milestone_exp_end = TextInput(title='Exposure End', placeholder='12345', width=200)
@@ -139,51 +158,60 @@ class Layout():
         self.milestone_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.milestone_delete_btn = Button(label='Delete', css_classes=['delete_button'], width=150)
         self.milestone_alert = Div(text=' ', css_classes=['alert-style'])
-
+        
+        #End of shift Summaries
         self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary', title='End of Night Summary', max_length=5000)
         self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
         self.summary_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.summary_btn = Button(label='Add/Update Summary', css_classes=['add_button'], width=150)
 
-        self.obs_time = TextInput(title ='ObsTime', placeholder='10', width=100)
-        self.test_time = TextInput(title ='TestTime', placeholder='0', width=100)
-        self.inst_loss_time = TextInput(title ='InstLoss', placeholder='0', width=100)
-        self.weather_loss_time = TextInput(title ='WeathLoss', placeholder='0', width=100)
-        self.tel_loss_time = TextInput(title ='TelLoss', placeholder='0', width=100)
+        #Time Use Input
+        self.obs_time = TextInput(title='ObsTime', placeholder='10', width=100)
+        self.test_time = TextInput(title='TestTime', placeholder='0', width=100)
+        self.inst_loss_time = TextInput(title='InstLoss', placeholder='0', width=100)
+        self.weather_loss_time = TextInput(title='WeathLoss', placeholder='0', width=100)
+        self.tel_loss_time = TextInput(title='TelLoss', placeholder='0', width=100)
         self.total_time = Div(text='Time Documented (hrs): ', width=100) #add all times together
+        self.full_time_text = Div(text='Total time between 18 deg. twilights (hrs): ', width=100)
         self.time_btn = Button(label='Add/Update Time Use', css_classes=['add_button'], width=150)
         
         #For Lead Observer
         milestone_layout_0 = layout([self.buffer,
-                                self.title,
-                                self.milestone_subtitle,
-                                self.milestone_inst,
-                                [[self.milestone_input,[self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl]],[self.milestone_load_num, self.milestone_load_btn]],
-                                [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
-                                self.milestone_alert,
-                                self.line,
-                                [self.summary_option,self.summary_load_btn],
-                                self.summary_input,
-                                self.summary_btn,
-                                [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, self.tel_loss_time, self.total_time, self.full_time_text],
-                                self.time_btn], width=1000)
+                                    self.title,
+                                    self.milestone_subtitle,
+                                    self.milestone_inst,
+                                    [[self.milestone_input,[self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl]],
+                                    [self.milestone_load_num, self.milestone_load_btn]],
+                                    [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
+                                    self.milestone_alert,
+                                    self.line,
+                                    [self.summary_option,self.summary_load_btn],
+                                    self.summary_input,
+                                    self.summary_btn,
+                                    [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, 
+                                    self.tel_loss_time, self.total_time, self.full_time_text],
+                                    self.time_btn], width=1000)
+
+        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
         #For Support Observer
         milestone_layout_1 = layout([self.buffer,
-                                self.title,
-                                self.milestone_subtitle,
-                                self.milestone_inst,
-                                [[self.milestone_input,[self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl]],[self.milestone_load_num, self.milestone_load_btn]],
-                                [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
-                                self.milestone_alert,
-                                self.line,
-                                [self.summary_option,self.summary_load_btn],
-                                self.summary_input,
-                                self.summary_btn], width=1000)
-        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
+                                    self.title,
+                                    self.milestone_subtitle,
+                                    self.milestone_inst,
+                                    [[self.milestone_input,[self.milestone_exp_start, self.milestone_exp_end, self.milestone_exp_excl]],
+                                    [self.milestone_load_num, self.milestone_load_btn]],
+                                    [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
+                                    self.milestone_alert,
+                                    self.line,
+                                    [self.summary_option,self.summary_load_btn],
+                                    self.summary_input,
+                                    self.summary_btn], width=1000)
+
         self.milestone_tab_1 = Panel(child=milestone_layout_1, title='Milestones')
 
     def get_exp_layout(self):
-
+        """Page to enter details about each exposure. Layouts differ for Lead Observer, Support Observer and Non Observers
+        """
         exp_subtitle = Div(text="Nightly Progress", css_classes=['subt-style'])
         inst="""<ul>
         <li>Throughout the night record the progress, including comments on calibrations and exposures. 
@@ -286,13 +314,18 @@ class Layout():
                                             [self.exp_btn],
                                             self.exp_alert], width=1000)
         self.exp_tab_1 = Panel(child=self.exp_layout_1, title="Exposures")
+
+        #Non observer layout defined in get_nonobs_layout()
         self.exp_tab_2 = Panel(child=self.nonobs_layout_exp, title="Exposures")
 
     def get_prob_layout(self):
+        """Page for entering problems. This is the same for LOs and SOs. 
+        There is a different page for Non Observers because they have to enter their name.
+        """
         self.prob_subtitle = Div(text="Problems", css_classes=['subt-style'])
         inst = """<ul>
-        <li>Describe problems as they come up, the time at which they occur, the resolution, and how much time was lost as a result. If there is an Alarm ID associated with the problem, 
-        include it, but leave blank if not. </li>
+        <li>Describe problems as they come up, the time at which they occur, the resolution, and how much time was lost as a result. 
+        If there is an Alarm ID associated with the problem, include it, but leave blank if not. </li>
         <li>Please enter the time when the problem began, or use the “Now” button if it just occurred.</li>
         <li>If you'd like to modify or add to a submission, you can <b>Load</b> it using its timestamp. 
         If you forget when a comment was submitted, check the Current NL. After making the modifications 
@@ -308,6 +341,7 @@ class Layout():
         self.prob_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.prob_delete_btn = Button(label='Delete', css_classes=['delete_button'], width=75)
         self.prob_alert = Div(text=' ', css_classes=['alert-style'])
+        self.exp_info = Div(text="Mandatory fields have an asterisk*.", css_classes=['inst-style'],width=500)
 
         prob_layout = layout([self.buffer,self.title,
                             self.prob_subtitle,
@@ -325,18 +359,22 @@ class Layout():
         self.prob_tab_1 = Panel(child=self.nonobs_layout_prob, title="Problems")
 
     def get_weather_layout(self):
-    
+        """Weather page includes input and also a Table and Plots. Input only for Lead Observers page.
+        """
         self.weather_subtitle = Div(text="Observing Conditions", css_classes=['subt-style'])
         inst = """<ul>
         <li>Every hour, as part of the OS checklist, include a description of the weather and observing conditions.</li>
-        <li>The most recent weather and observing condition information will be added to the table below and the Night Log when you <b>Add Weather Description</b>.
-        Please note that the additional information may not correlate exactly with the time stamp but are just the most recent recorded values</li>
+        <li>The most recent weather and observing condition information will be added to the table below and the Night Log when you 
+        <b>Add Weather Description</b>. Please note that the additional information may not correlate exactly with the time stamp 
+        but are just the most recent recorded values</li>
         <li>If you are not the LO, you can only see their inputs.</li>
-        <li>SCROLL DOWN! There are plots of the ongoing telemetry for the observing conditions. These will be added to the Night Log when submitted at the end of the night.</li> 
+        <li>SCROLL DOWN! There are plots of the ongoing telemetry for the observing conditions. 
+        These will be added to the Night Log when submitted at the end of the night.</li> 
         </ul>
         """
         self.weather_inst = Div(text=inst, width=1000, css_classes=['inst-style'])
 
+        #Table
         data = pd.DataFrame(columns = ['Time','desc','temp','wind','humidity','seeing','tput','skylevel'])
         self.weather_source = ColumnDataSource(data)
         obs_columns = [TableColumn(field='Time', title='Time (Local)', width=100, formatter=self.timefmt),
@@ -351,9 +389,10 @@ class Layout():
         self.weather_table = DataTable(source=self.weather_source, columns=obs_columns, fit_columns=False, width=1000, height=300)
 
         telem_data = pd.DataFrame(columns =
-        ['time','exp','mirror_temp','truss_temp','air_temp','humidity','wind_speed','airmass','exptime','seeing','tput','skylevel'])
+        ['time', 'exp', 'mirror_temp', 'truss_temp', 'air_temp', 'humidity', 'wind_speed', 'airmass', 'exptime', 'seeing', 'tput', 'skylevel'])
         self.telem_source = ColumnDataSource(telem_data)
 
+        #Plots
         plot_tools = 'pan,wheel_zoom,lasso_select,reset,undo,save'
         self.p1 = figure(plot_width=800, plot_height=300, x_axis_label='UTC Time', y_axis_label='Temp (C)',x_axis_type="datetime", tools=plot_tools)
         self.p2 = figure(plot_width=800, plot_height=300, x_axis_label='UTC Time', x_range=self.p1.x_range, y_axis_label='Humidity (%)', x_axis_type="datetime", tools=plot_tools)
@@ -364,9 +403,9 @@ class Layout():
         self.p7 = figure(plot_width=800, plot_height=300, x_axis_label='Exposure', y_axis_label='Transparency', tools=plot_tools, x_range = self.p6.x_range)
         self.p8 = figure(plot_width=800, plot_height=300, x_axis_label='Exposure', y_axis_label='Sky Level', tools=plot_tools, x_range=self.p6.x_range)
 
-        self.p1.circle(x='time',y='mirror_temp', source=self.telem_source, color='orange', size=10, alpha=0.5)
-        self.p1.circle(x='time',y='truss_temp', source=self.telem_source, size=10, alpha=0.5) 
-        self.p1.circle(x='time',y='air_temp', source=self.telem_source, color='green', size=10, alpha=0.5) 
+        self.p1.circle(x='time', y='mirror_temp', source=self.telem_source, color='orange', size=10, alpha=0.5)
+        self.p1.circle(x='time', y='truss_temp', source=self.telem_source, size=10, alpha=0.5) 
+        self.p1.circle(x='time', y='air_temp', source=self.telem_source, color='green', size=10, alpha=0.5) 
         self.p1.legend.location = "top_right"
 
         self.p2.circle(x='time', y='humidity', source=self.telem_source, size=10, alpha=0.5)
@@ -385,30 +424,33 @@ class Layout():
 
         #For Lead Observer
         weather_layout_0 = layout([self.buffer,self.title,
-                        self.weather_subtitle,
-                        self.weather_inst,
-                        [self.weather_desc, self.weather_btn],
-                        self.weather_alert,
-                        self.weather_table,
-                        self.plots_subtitle,
-                        self.bk_plots], width=1000)
+                                self.weather_subtitle,
+                                self.weather_inst,
+                                [self.weather_desc, self.weather_btn],
+                                self.weather_alert,
+                                self.weather_table,
+                                self.plots_subtitle,
+                                self.bk_plots], width=1000)
 
         self.weather_tab_0 = Panel(child=weather_layout_0, title="Observing Conditions")
 
         #For Support Observer
         weather_layout_1 = layout([self.buffer,self.title,
-                        self.weather_subtitle,
-                        self.weather_inst,
-                        self.weather_alert,
-                        self.weather_table,
-                        self.plots_subtitle,
-                        self.bk_plots], width=1000)
+                                self.weather_subtitle,
+                                self.weather_inst,
+                                self.weather_alert,
+                                self.weather_table,
+                                self.plots_subtitle,
+                                self.bk_plots], width=1000)
 
         self.weather_tab_1 = Panel(child=weather_layout_1, title="Observing Conditions")
 
     def get_checklist_layout(self):
-        
-        self.checklist = CheckboxGroup(labels=["Did you check the weather?", "Did you check the guiding?", "Did you check the positioner temperatures?","Did you check the FXC?", "Did you check the Spectrograph Cryostat?","Did you check the FP Chiller?"])
+        """Hourly checklist for Lead Observer
+        """
+        self.checklist = CheckboxGroup(labels=["Did you check the weather?", "Did you check the guiding?", 
+                                            "Did you check the positioner temperatures?","Did you check the FXC?", 
+                                            "Did you check the Spectrograph Cryostat?","Did you check the FP Chiller?"])
         
         inst="""
         <ul>
@@ -425,6 +467,7 @@ class Layout():
         
         self.check_subtitle = Div(text="LO Checklist", css_classes=['subt-style'])
         
+        #Layout
         checklist_layout = layout(self.buffer,self.title,
                                 self.check_subtitle,
                                 self.checklist_inst,
@@ -435,12 +478,20 @@ class Layout():
         self.check_tab = Panel(child=checklist_layout, title="Checklist")
 
     def get_nl_layout(self):
+        """This page shows the current NightLog and updates every 30 seconds.
+        This page includes the submission button on the LO page.
+        """
+        self.nl_file = None
         self.nl_subtitle = Div(text="Current DESI Night Log: {}".format(self.nl_file), css_classes=['subt-style'])
         self.nl_text = Div(text=" ", width=800)
         self.nl_alert = Div(text='You must be connected to a Night Log', css_classes=['alert-style'], width=500)
+
+        #Submit
         self.nl_submit_btn = Button(label='Submit NightLog & Publish NightSummary (Only Press Once - this takes a few minutes)', width=800, css_classes=['add_button'])
         self.submit_text = Div(text=' ', css_classes=['alert-style'], width=800)
         
+        #Exposure Table
+        #In case not connected to exposure directory
         self.exptable_alert = Div(text=" ", css_classes=['alert-style'], width=500)
 
         exp_data = pd.DataFrame(columns=['date_obs','id','program','sequence','flavor','exptime','airmass','seeing'])
@@ -459,27 +510,29 @@ class Layout():
 
         #For Lead Observer
         nl_layout_0 = layout([self.buffer,self.title,
-                    self.nl_subtitle,
-                    self.nl_alert,
-                    self.nl_text,
-                    self.exptable_alert,
-                    self.exp_table,
-                    self.submit_text,
-                    self.nl_submit_btn], width=1000)
+                            self.nl_subtitle,
+                            self.nl_alert,
+                            self.nl_text,
+                            self.exptable_alert,
+                            self.exp_table,
+                            self.submit_text,
+                            self.nl_submit_btn], width=1000)
 
         self.nl_tab_0 = Panel(child=nl_layout_0, title="Current DESI Night Log")
 
         #For Support Observer
         nl_layout_1 = layout([self.buffer,self.title,
-                    self.nl_subtitle,
-                    self.nl_alert,
-                    self.nl_text,
-                    self.exptable_alert,
-                    self.exp_table], width=1000)
+                            self.nl_subtitle,
+                            self.nl_alert,
+                            self.nl_text,
+                            self.exptable_alert,
+                            self.exp_table], width=1000)
 
         self.nl_tab_1 = Panel(child=nl_layout_1, title="Current DESI Night Log")
 
     def get_ns_layout(self):
+        """Page to access old Night Logs or 'Night Summaries'
+        """
         self.ns_subtitle = Div(text='Night Summaries', css_classes=['subt-style'])
         self.ns_inst = Div(text='Enter a date to get previously submitted NightLogs', css_classes=['inst-style'])
         self.ns_date_btn = Button(label='Get NightLog', css_classes=['init_button'])
@@ -489,6 +542,7 @@ class Layout():
         self.ns_last_date_btn = Button(label='Previous Night', css_classes=['load_button'])
         self.ns_html = Div(text='',width=800)
 
+        #Layout
         ns_layout = layout([self.buffer,
                             self.ns_subtitle,
                             self.ns_inst,
