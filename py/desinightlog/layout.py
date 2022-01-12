@@ -363,10 +363,9 @@ class Layout():
         """
         self.weather_subtitle = Div(text="Observing Conditions", css_classes=['subt-style'])
         inst = """<ul>
-        <li>Every hour, as part of the OS checklist, include a description of the weather and observing conditions.</li>
-        <li>The most recent weather and observing condition information will be added to the table below and the Night Log when you 
-        <b>Add Weather Description</b>. Please note that the additional information may not correlate exactly with the time stamp 
-        but are just the most recent recorded values</li>
+        <li>Every hour, as part of the LO checklist, include a description of the weather and observing conditions.</li>
+        <li>The most recent weather and observing condition information will be added to the table below and the Night Log when you <b>Add Weather Description</b>.
+        Please note that the additional information may not correlate exactly with the time stamp but are just the most recent recorded values</li>
         <li>If you are not the LO, you can only see their inputs.</li>
         <li>SCROLL DOWN! There are plots of the ongoing telemetry for the observing conditions. 
         These will be added to the Night Log when submitted at the end of the night.</li> 

@@ -559,8 +559,8 @@ class NightLog(object):
             df = df.fillna(value=0)
             d = df.iloc[0]
 
-            obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],
-                'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'Total Recorded':d['total'],'Time between 18 deg. twilight':d['18deg']})
+            obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'Total Recorded':d['total'],'Time between 18 deg. twilight':d['18deg']})
+            file_nl.write("<br/><br/>")
             file_nl.write("Time Use (hrs):<br/>")
             file_nl.write("<ul>")
             for name, item in obs_items.items():
