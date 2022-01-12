@@ -17,5 +17,5 @@ To run the Bokeh application for testing purposes, best to do so on the desi ser
 * To run:
  * `cd py/desinightlog`
  * `bokeh serve ObserverReport --allow-websocket-origin=desi-4.kpno.noao.edu:5006`
- * access in browser at http://desi-4.kpno.noao.edu/5006
+ * access in browser at http://desi-4.kpno.noao.edu:5006
 
