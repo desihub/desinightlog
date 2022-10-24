@@ -1170,7 +1170,6 @@ class Report(Layout):
         #yag = yagmail.SMTP(sender)
         #yag.send("parfa30@gmail.com",nl_html,self.DESI_Log.telem_plots_file)
         s = smtplib.SMTP('localhost')
-        
         s.set_debuglevel(2)
         s.sendmail(sender, user_email, text)
         s.quit()
