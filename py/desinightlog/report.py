@@ -1109,8 +1109,8 @@ class Report(Layout):
         except:
             self.logger.info("Something wrong with telem plots")
 
-        sender = "noreply-ecl@noao.edu"
-        #sender = "noreply-ecl@noirlab.edu"
+        #sender = "noreply-ecl@noao.edu"
+        sender = "noreply-ecl@noirlab.edu"
 
         # Create message container - the correct MIME type is multipart/alternative.
         msg = MIMEMultipart('html')
