@@ -7,21 +7,19 @@ Updated DESI_Night_Log/OS_Report for single observer platform
 
 """
 
-import os, sys
-sys.path.append(os.getcwd())
-sys.path.append('./ECLAPI-8.0.12/lib')
+import os
+import sys
 
 from bokeh.io import curdoc
-from bokeh.models import TextInput, Button, TextAreaInput, Select, RadioButtonGroup
 from bokeh.models.widgets.markups import Div
-from bokeh.layouts import layout, column, row
-from bokeh.models.widgets import Panel, Tabs
+from bokeh.models.widgets import Tabs
 
-import nightlog as nl
+sys.path.append(os.getcwd())
+sys.path.append('./ECLAPI-8.0.12/lib')
 from report import Report
 
-#os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
-#os.environ['NW_DIR'] = '/exposures/desi'
+os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
+os.environ['NW_DIR'] = '/exposures/desi'
 
 class Obs_Report(Report):
     def __init__(self):
@@ -96,5 +94,5 @@ OBS = Obs_Report()
 OBS.run()
 curdoc().title = 'DESI Night Log'
 curdoc().add_root(OBS.layout)
-curdoc().add_periodic_callback(OBS.current_nl, 30000)
-curdoc().add_periodic_callback(OBS.get_exposure_list, 30000)
+curdoc().add_periodic_callback(OBS.current_nl, 30000) #Every 30 seconds
+curdoc().add_periodic_callback(OBS.get_exposure_list, 30000) #Every 30 seconds
