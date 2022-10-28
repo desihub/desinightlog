@@ -386,7 +386,6 @@ class Report(Layout):
             except Exception as e:
                 self.connect_txt.text = 'Error with Meta Data File: {}'.format(e)
         else:
-            print('here')
             self.connect_txt.text = 'Fill Out Observer Info'
             self.intro_layout.children[9] = self.update_layout
             self.update_log_status = True
@@ -503,33 +502,22 @@ class Report(Layout):
         Science exposures only.
         """
         try:
-            print('try get exposure list 1')
             current_exp = self.exp_select.value
             dir_ = os.path.join(self.nw_dir, self.night)
-            temp_exposures = os.listdir(dir_)
-            print('temp exposures')
-            print(temp_exposures)
-            exposures = list(map(lambda x: str(int(x)), temp_exposures))
-            print('exposures')
-            print(exposures)
-            
+            exposures = list(map(lambda x: str(int(x)), os.listdir(dir_)))
 
             exposures = np.sort(exposures)[::-1]
             self.exp_select.options = list(exposures) 
 
             #set displayed exposure in list 
             if current_exp in ['', ' ', np.nan, None]:
-                print('current_exp')
-                print(current_exp)
-                print('exposures')
-                print(exposures)
                 self.exp_select.value = exposures[0]
             else:
                 self.exp_select.value = current_exp
 
         except Exception as e:
-            print('except get exposure list 1')
-            print(e)
+            logger.info('exception in exposure list generation')
+            logger.info(e)
             self.exp_select.options = []
 
     def select_exp(self, attr, old, new):
@@ -565,7 +553,6 @@ class Report(Layout):
         Table at end of Current NightLog Page is updated
         """
         try:
-            print('try get explist 1')
             exp_df = pd.read_sql_query(f"SELECT * FROM exposure WHERE night = '{self.night}'", self.conn)
             if len(exp_df.date_obs) >  0:
                 time = exp_df.date_obs.dt.tz_convert('US/Arizona')
@@ -578,7 +565,6 @@ class Report(Layout):
             else:
                 self.exptable_alert.text = f'No exposures available for night {self.night}'
         except Exception as e:
-            print('except get_exp_list 1')
             self.exptable_alert.text = 'Cannot connect to Exposure Data Base. {}'.format(e)
 
     def exp_to_html(self):
