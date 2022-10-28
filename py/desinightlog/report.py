@@ -59,7 +59,7 @@ class Report(Layout):
     def __init__(self):
         Layout.__init__(self)
 
-        self.test = False #Submission emails to tester only
+        self.test = os.environ['USER'].lower() == 'desiobserver' #Submission emails to tester only
 
         self.report_type = None #Updates when connect to report: LO, SO, NObs
         self.save_telem_plots = False #Saves telemetry plots each time they are produced. They are saved during submission. This is time consuming (not recommended)
@@ -1220,7 +1220,7 @@ class Report(Layout):
             self.current_nl()
 
             if self.test:
-                self.email_nightsum(user_email = ["parfa30@gmail.com","parkerf@berkeley.edu"])
+                self.email_nightsum(user_email = ["james.lasker3@gmail.com","jlasker@smu.edu"])
             else:
                 self.email_nightsum(user_email = ["desi-nightlog@desi.lbl.gov"])
 
@@ -1233,11 +1233,7 @@ class Report(Layout):
         except:
             self.logger.info("Something wrong with telem plots")
 
-<<<<<<< HEAD
-        sender = "noreply-ecl@noao.edu"
-=======
         sender = "noreply-ecl@noirlab.edu"
->>>>>>> d119e5dbe0d8ebf73764e9f3e1df0671bfacdf37
 
         # Create message container - the correct MIME type is multipart/alternative.
         msg = MIMEMultipart('html')
@@ -1279,7 +1275,7 @@ class Report(Layout):
             msg.attach(msgImage)
             Html_file.write(img_tag)
         except Exception as e:
-            self.logger.info('Problem attachign pauls plot: {}'.format(e))
+            self.logger.info('Problem attaching Paul\'s plot: {}'.format(e))
         # Add images
         if os.path.exists(self.DESI_Log.telem_plots_file):
             telemplot = open(self.DESI_Log.telem_plots_file, 'rb').read()
