@@ -20,6 +20,7 @@ import logging
 import smtplib
 import psycopg2
 import ephem
+import glob
 
 import numpy as np
 import pandas as pd
@@ -502,22 +503,33 @@ class Report(Layout):
         Science exposures only.
         """
         try:
+            print('try get exposure list 1')
             current_exp = self.exp_select.value
             dir_ = os.path.join(self.nw_dir, self.night)
-
-            for path, subdirs, files in os.walk(dir_): 
-                exposures = list([str(int(s)) for s in subdirs])
+            temp_exposures = os.listdir(dir_)
+            print('temp exposures')
+            print(temp_exposures)
+            exposures = list(map(lambda x: str(int(x)), temp_exposures))
+            print('exposures')
+            print(exposures)
+            
 
             exposures = np.sort(exposures)[::-1]
             self.exp_select.options = list(exposures) 
 
             #set displayed exposure in list 
             if current_exp in ['', ' ', np.nan, None]:
+                print('current_exp')
+                print(current_exp)
+                print('exposures')
+                print(exposures)
                 self.exp_select.value = exposures[0]
             else:
                 self.exp_select.value = current_exp
 
-        except:
+        except Exception as e:
+            print('except get exposure list 1')
+            print(e)
             self.exp_select.options = []
 
     def select_exp(self, attr, old, new):
@@ -553,6 +565,7 @@ class Report(Layout):
         Table at end of Current NightLog Page is updated
         """
         try:
+            print('try get explist 1')
             exp_df = pd.read_sql_query(f"SELECT * FROM exposure WHERE night = '{self.night}'", self.conn)
             if len(exp_df.date_obs) >  0:
                 time = exp_df.date_obs.dt.tz_convert('US/Arizona')
@@ -565,6 +578,7 @@ class Report(Layout):
             else:
                 self.exptable_alert.text = f'No exposures available for night {self.night}'
         except Exception as e:
+            print('except get_exp_list 1')
             self.exptable_alert.text = 'Cannot connect to Exposure Data Base. {}'.format(e)
 
     def exp_to_html(self):
@@ -975,9 +989,9 @@ class Report(Layout):
                 input_name = os.path.splitext(str(self.img_upload_problems.filename))
                 self.current_img_name = self.img_upload_problems.filename
                 img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
-        self.image_location_on_server = f'http://desi-www.kpno.noao.edu:8090/{self.night}/images/{img_name}'
+        self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
         width=400
-        height=400 #http://desi-www.kpno.noao.edu:8090/nightlogs
+        height=400 #http://desi-www.kpno.noirlab.edu:8090/nightlogs
         preview = '<img src="%s" width=%s height=%s alt="Uploaded image %s">\n' % (self.image_location_on_server,str(width),str(height),img_name)
         return img_name, img_data, preview
 
@@ -1183,7 +1197,7 @@ class Report(Layout):
 
                     subject = 'Night Summary {}'.format(self.night)
                     e.addSubject(subject)
-                    url = 'http://desi-www.kpno.noao.edu:8090/ECL/desi'
+                    url = 'http://desi-www.kpno.noirlab.edu:8090/ECL/desi'
                     user = 'dos'
                     pw = 'dosuser'
 
@@ -1234,7 +1248,7 @@ class Report(Layout):
         except:
             self.logger.info("Something wrong with telem plots")
 
-        sender = "noreply-ecl@noao.edu"
+        sender = "noreply-ecl@noirlab.edu"
 
         # Create message container - the correct MIME type is multipart/alternative.
         msg = MIMEMultipart('html')
