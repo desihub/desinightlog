@@ -1220,9 +1220,11 @@ class Report(Layout):
             self.current_nl()
 
             if self.test:
-                self.email_nightsum(user_email = ["parfa30@gmail.com","parkerf@berkeley.edu"])
+                self.email_nightsum(user_email = ["james.lasker3@gmail.com","jlasker@smu.edu"])
             else:
-                self.email_nightsum(user_email = ["desi-nightlog@desi.lbl.gov"])
+
+                self.email_nightsum(user_email = ["james.lasker3@gmail.com","satya.gontcho@gmail.com","desi-nightlog@desi.lbl.gov"])
+
 
             self.submit_text.text = "Night Log posted to eLog and emailed to collaboration at {}".format(datetime.datetime.now().strftime("%Y%m%d%H:%M")) + '</br>'
 
@@ -1275,7 +1277,7 @@ class Report(Layout):
             msg.attach(msgImage)
             Html_file.write(img_tag)
         except Exception as e:
-            self.logger.info('Problem attachign pauls plot: {}'.format(e))
+            self.logger.info('Problem attaching pauls plot: {}'.format(e))
         # Add images
         if os.path.exists(self.DESI_Log.telem_plots_file):
             telemplot = open(self.DESI_Log.telem_plots_file, 'rb').read()
@@ -1293,6 +1295,8 @@ class Report(Layout):
         #yag = yagmail.SMTP(sender)
         #yag.send("parfa30@gmail.com",nl_html,self.DESI_Log.telem_plots_file)
         s = smtplib.SMTP('localhost')
+        
+        s.set_debuglevel(2)
         s.sendmail(sender, user_email, text)
         s.quit()
         self.logger.info("Email sent")
