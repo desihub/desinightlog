@@ -18,8 +18,12 @@ sys.path.append(os.getcwd())
 sys.path.append('./ECLAPI-8.0.12/lib')
 from report import Report
 
-#os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
-#os.environ['NW_DIR'] = '/exposures/desi'
+if os.environ['USER'].lower() == 'desiobserver':
+    os.environ['NL_DIR'] = '/n/home/desiobserver/nightlogs'
+    os.environ['NW_DIR'] = '/exposures/desi'
+elif os.environ['USER'].lower() == 'msdos':
+    assert(os.environ['NL_DIR'])
+    assert(os.environ['NW_DIR'])
 
 class Obs_Report(Report):
     def __init__(self):
