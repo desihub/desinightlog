@@ -515,8 +515,8 @@ class Report(Layout):
                 self.exp_select.value = current_exp
 
         except Exception as e:
-            logger.info('exception in exposure list generation')
-            logger.info(e)
+            self.logger.info('exception in exposure list generation')
+            self.logger.info(e)
             self.exp_select.options = []
 
     def select_exp(self, attr, old, new):
