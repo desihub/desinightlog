@@ -346,7 +346,7 @@ class NightLog(object):
 
     def _write_image_tag(self, img_file, img_name, comments = None, width=400, height=400):
         # server should be made a class variable
-        server = f'http://desi-www.kpno.noao.edu:8090/nightlogs/{self.obsday}/images'
+        server = f'http://desi-www.kpno.noirlab.edu:8090/nightlogs/{self.obsday}/images'
         img_file.write("<br/>")
         #img_file.write("h5. %s<br/>" % img_name)
         img_file.write('<img src="%s/%s" width=%s height=%s alt="Uploaded image %s"><br/>' % (server,img_name,str(width),str(height),img_name))

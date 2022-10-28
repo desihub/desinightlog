@@ -385,7 +385,6 @@ class Report(Layout):
             except Exception as e:
                 self.connect_txt.text = 'Error with Meta Data File: {}'.format(e)
         else:
-            print('here')
             self.connect_txt.text = 'Fill Out Observer Info'
             self.intro_layout.children[9] = self.update_layout
             self.update_log_status = True
@@ -504,9 +503,7 @@ class Report(Layout):
         try:
             current_exp = self.exp_select.value
             dir_ = os.path.join(self.nw_dir, self.night)
-
-            for path, subdirs, files in os.walk(dir_): 
-                exposures = list([str(int(s)) for s in subdirs])
+            exposures = list(map(lambda x: str(int(x)), os.listdir(dir_)))
 
             exposures = np.sort(exposures)[::-1]
             self.exp_select.options = list(exposures) 
@@ -517,7 +514,9 @@ class Report(Layout):
             else:
                 self.exp_select.value = current_exp
 
-        except:
+        except Exception as e:
+            logger.info('exception in exposure list generation')
+            logger.info(e)
             self.exp_select.options = []
 
     def select_exp(self, attr, old, new):
@@ -975,9 +974,9 @@ class Report(Layout):
                 input_name = os.path.splitext(str(self.img_upload_problems.filename))
                 self.current_img_name = self.img_upload_problems.filename
                 img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
-        self.image_location_on_server = f'http://desi-www.kpno.noao.edu:8090/{self.night}/images/{img_name}'
+        self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
         width=400
-        height=400 #http://desi-www.kpno.noao.edu:8090/nightlogs
+        height=400 #http://desi-www.kpno.noirlab.edu:8090/nightlogs
         preview = '<img src="%s" width=%s height=%s alt="Uploaded image %s">\n' % (self.image_location_on_server,str(width),str(height),img_name)
         return img_name, img_data, preview
 
@@ -1183,7 +1182,7 @@ class Report(Layout):
 
                     subject = 'Night Summary {}'.format(self.night)
                     e.addSubject(subject)
-                    url = 'http://desi-www.kpno.noao.edu:8090/ECL/desi'
+                    url = 'http://desi-www.kpno.noirlab.edu:8090/ECL/desi'
                     user = 'dos'
                     pw = 'dosuser'
 
@@ -1234,7 +1233,11 @@ class Report(Layout):
         except:
             self.logger.info("Something wrong with telem plots")
 
+<<<<<<< HEAD
         sender = "noreply-ecl@noao.edu"
+=======
+        sender = "noreply-ecl@noirlab.edu"
+>>>>>>> d119e5dbe0d8ebf73764e9f3e1df0671bfacdf37
 
         # Create message container - the correct MIME type is multipart/alternative.
         msg = MIMEMultipart('html')
