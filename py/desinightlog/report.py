@@ -500,19 +500,10 @@ class Report(Layout):
         Updates the exposure Select list.
         Science exposures only.
         """
-        print('My changes got registered')
         try:
             current_exp = self.exp_select.value
             dir_ = os.path.join(self.nw_dir, self.night)
-            print('dir_')
-            print(dir_)
-            import glob
-            print(glob.glob(dir_ + '/*'))
-            print('next os walk dir')
-            print(next(os.walk(dir_))[1])
             exposures = list(map(lambda x: str(int(x)), next(os.walk(dir_))[1]))
-            print('exposures')
-            print(exposures)
             exposures = np.sort(exposures)[::-1]
             self.exp_select.options = list(exposures) 
 
