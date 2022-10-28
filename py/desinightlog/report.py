@@ -20,7 +20,6 @@ import logging
 import smtplib
 import psycopg2
 import ephem
-import glob
 
 import numpy as np
 import pandas as pd
