@@ -13,7 +13,7 @@ To run the Bokeh application for testing purposes, best to do so on the desi ser
 * Make sure that NL_DIR and NW_DIR are defined in ObserverReport.py
 * Set self.test=True in report.py
 * To run:
- * `cd py/desinightlog`
+ * `cd py/desinightlog `
  * `bokeh serve ObserverReport --allow-websocket-origin=desi-14.kpno.noao.edu:5006`
  * access in browser at http://desi-14.kpno.noao.edu/5006
 
