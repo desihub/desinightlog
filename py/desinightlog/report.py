@@ -483,6 +483,7 @@ class Report(Layout):
                 if self.lastPeriodicCallbackError == e:
                     print('same error {0}'.format(e))
             self.lastPeriodicCallbackError = e
+            raise(e)
         path = self.DESI_Log.nightlog_html 
         nl_file = open(path,'r')
         nl_txt = ''
