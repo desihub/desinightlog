@@ -474,7 +474,15 @@ class Report(Layout):
         """Updates NightLog on Current NightLog Page. Updated every 30 seconds
         """
         now = datetime.datetime.now()
-        self.DESI_Log.finish_the_night()
+        try:
+            self.DESI_Log.finish_the_night()
+            if 'lastPeriodicCallbackError' in locals():
+                delattr(self, 'lastPeriodicCallbackError')
+        except Exception as e:
+            if 'lastPeriodicCallbackError' in locals():
+                if self.lastPeriodicCallbackError == e:
+                    print('same error {0}'.format(e))
+            self.lastPeriodicCallbackError = e
         path = self.DESI_Log.nightlog_html 
         nl_file = open(path,'r')
         nl_txt = ''
