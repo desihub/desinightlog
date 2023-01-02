@@ -25,8 +25,8 @@ class Layout():
 
         self.lo_names = ['None ', 'Liz Buckley-Geer', 'Ann Elliott', 'Satya Gontcho A Gontcho', 'James Lasker',
                         'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
-        self.oa_names = ['None ', 'Karen Butler', 'Amy Robertson', 'Anthony Paat', 'Thaxton Smith', 
-                        'Dave Summers','Doug Williams','Other ']
+        self.oa_names = ['None ', 'Karen Butler', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
+         'Thaxton Smith', 'Dave Summers','Doug Williams','Other ']
 
         #Used on multiple pages
         self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
