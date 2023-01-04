@@ -138,10 +138,10 @@ class NightLog(object):
             other_filen = filen.replace(loc, 'kpno')
         dfs = []
         if os.path.exists(filen):
-            df1 = pd.read_csv(filen)
+            df1 = self.safe_read_csv(filen)
             dfs.append(df1)
         if os.path.exists(other_filen):
-            df2 = pd.read_csv(other_filen)
+            df2 = self.safe_read_csv(other_filen)
             dfs.append(df2)
         if len(dfs) > 0:
             df_ = pd.concat(dfs)
@@ -162,7 +162,7 @@ class NightLog(object):
             init_df.to_csv(filen, index=False)
         data = np.array(data)
 
-        df = pd.read_csv(filen)
+        df = self.safe_read_csv(filen)
         data_df = pd.DataFrame([data], columns=cols)
         df = df.append(data_df)
 
@@ -198,7 +198,7 @@ class NightLog(object):
         if tab == 'progress':
             file = self.obs_exp
 
-        df = pd.read_csv(file)
+        df = self.safe_read_csv(file)
         idx = df[df.Time == time].index[0]
         df = df.drop([idx])
         df.reset_index(inplace=True, drop=True)
@@ -244,7 +244,7 @@ class NightLog(object):
         if not os.path.exists(self.summary_file):
             df = pd.DataFrame(columns=['SUMMARY_0','SUMMARY_1'])
         else:
-            df = pd.read_csv(self.summary_file)
+            df = self.safe_read_csv(self.summary_file)
         for row, value in data.items():
             df[row] = df[row].astype('str')
             df.at[0,row] = str(value)
@@ -256,7 +256,7 @@ class NightLog(object):
             df = pd.DataFrame(columns=['NIGHT','EXPID','BAD','BADCAMS','COMMENT'])
             df.to_csv(self.bad_exp_list, index=False)
         else:
-            df = pd.read_csv(self.bad_exp_list)
+            df = self.safe_read_csv(self.bad_exp_list)
 
         this_df = pd.DataFrame.from_dict(data)
         df = pd.concat([df, this_df])
@@ -269,9 +269,9 @@ class NightLog(object):
         the time of the exposure will be listed as that in the DB rather than what was manually input
         """
         if os.path.exists(file):
-            df = pd.read_csv(file)
+            df = self.safe_read_csv(file)
             if os.path.exists(self.explist_file):
-                exp_df = pd.read_csv(self.explist_file)
+                exp_df = self.safe_read_csv(self.explist_file)
                 for index, row in df.iterrows():
                     try:
                         e_ = exp_df[exp_df.id == int(row['Exp_Start'])]
@@ -462,7 +462,8 @@ class NightLog(object):
 
     def write_exposure(self, file):
         if os.path.exists(self.explist_file):
-            exp_df = pd.read_csv(self.explist_file)
+            
+            exp_df = self.safe_read_csv(self.explist_file)
 
         self.check_exp_times(self.obs_exp)
 
@@ -555,7 +556,7 @@ class NightLog(object):
     def write_time_summary(self, file_nl):
         f = self._open_kpno_file_first(self.time_use)
         if os.path.exists(f):
-            df = pd.read_csv(f)
+            df = self.safe_read_csv(f)
             df = df.fillna(value=0)
             d = df.iloc[0]
 
@@ -585,7 +586,7 @@ class NightLog(object):
         f = self._open_kpno_file_first(self.summary_file)
         if os.path.exists(f):
             try:
-                df = pd.read_csv(f)
+                df = self.safe_read_csv(f)
                 d = df.iloc[0]
                 if str(d['SUMMARY_0']) not in ['nan', 'None','',' ']:
                     file_nl.write(str(d['SUMMARY_0']))
@@ -646,6 +647,22 @@ class NightLog(object):
             self.logger.info('Exception reading meta json file: {}'.format(str(e)))
 
         file_intro.close()
+
+    def safe_read_csv(self, file):
+        try:
+            df = pd.read_csv(file)
+            return df
+        except pd.errors.EmptyDataError as e:
+            self.logger.info('EmptyDataError when reading csv.')
+            self.logger.info('Archiving file and trying again at the next callback')
+            if os.path.exists(file + '.old'):
+                os.rename(file, file + '.old_archive')
+                os.chmod(file + '.old_archive', 0o444)
+            else:
+                os.rename(file, file + '.old' )
+            raise(e)
+
+
 
 
     def finish_the_night(self):

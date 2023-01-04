@@ -109,6 +109,10 @@ class Report(Layout):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
+        #set variables to reduce cluttering in the nightlog's log
+        self.lastPeriodicCallbackErrorStr = None
+        self.lastPeriodicCallbackErrorClass = None
+
 
     ##Util functions
     def clear_input(self, items):
@@ -476,17 +480,26 @@ class Report(Layout):
         now = datetime.datetime.now()
         try:
             self.DESI_Log.finish_the_night()
-            if 'lastPeriodicCallbackError' in locals():
-                delattr(self, 'lastPeriodicCallbackError')
+            if not (self.lastPeriodicCallbackErrorStr is None):
+                self.logger.info('resetting last periodic callback error \
+                    after successful callback')
+                self.lastPeriodicCallbackErrorStr = None
+                self.lastPeriodicCallbackErrorClass = None
         except Exception as e:
-            if 'lastPeriodicCallbackError' in locals():
-                if self.lastPeriodicCallbackError == e:
-                    print('same error {0}'.format(e))
+            if not (self.lastPeriodicCallbackErrorStr is None):
+                if (self.lastPeriodicCallbackErrorStr == str(e)) & (self.lastPeriodicCallbackErrorClass == e.__class__):
+                    self.logger.info('same exception as before: {0}'.format(e))
                 else:
-                    self.lastPeriodicCallbackError = e
+                    self.logger.info('not the same exception as before')
+                    self.lastPeriodicCallbackErrorStr = str(e)
+                    self.lastPeriodicCallbackErrorClass = e.__class__
+                    self.logger.info('new exception should be raised here.')
                     raise(e)
             else:
-                self.lastPeriodicCallbackError = e
+                self.logger.info('no current lastPeriodicCallbackError')
+                self.lastPeriodicCallbackErrorStr = str(e)
+                self.lastPeriodicCallbackErrorClass = e.__class__
+                self.logger.info('new exception should be raised here.')
                 raise(e)
         path = self.DESI_Log.nightlog_html 
         nl_file = open(path,'r')
@@ -590,6 +603,7 @@ class Report(Layout):
 
     def exp_add(self):
         quality = None
+        submit = False
         if self.os_exp_option.active == 0: #Time
             if self.exp_time.value not in [None, 'None'," ", ""]:
                 try:
