@@ -37,9 +37,10 @@ class NightLog(object):
         self.location = location
         self.logger = logger
 
-        #self.server =  f'http://desi-www.kpno.noirlab.edu:8090/nightlogs/{self.obsday}/images'
-        self.server =  f'http://desi-4.kpno.noirlab.edu:8090/{self.obsday}/images'
-
+        if os.environ['USER'].lower() == 'desiobserver':
+            self.server =  f'http://desi-4.kpno.noirlab.edu:8090/{self.obsday}/images'
+        else:
+            self.server =  f'http://desi-www.kpno.noirlab.edu:8090/nightlogs/{self.obsday}/images'
 
         #Directory structure 
         self.root_dir = os.path.join(os.environ['NL_DIR'], self.obsday)
