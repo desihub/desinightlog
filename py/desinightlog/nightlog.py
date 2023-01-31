@@ -37,6 +37,11 @@ class NightLog(object):
         self.location = location
         self.logger = logger
 
+        if os.environ['USER'].lower() == 'desiobserver':
+            self.server =  f'http://desi-4.kpno.noirlab.edu:8090/{self.obsday}/images'
+        else:
+            self.server =  f'http://desi-www.kpno.noirlab.edu:8090/nightlogs/{self.obsday}/images'
+
         #Directory structure 
         self.root_dir = os.path.join(os.environ['NL_DIR'], self.obsday)
         self.image_dir = os.path.join(self.root_dir,'images')
@@ -344,12 +349,10 @@ class NightLog(object):
         with open(img_file, "wb") as fh:
             fh.write(base64.decodebytes(img_data))
 
-    def _write_image_tag(self, img_file, img_name, comments = None, width=400, height=400):
-        # server should be made a class variable
-        server = f'http://desi-www.kpno.noirlab.edu:8090/nightlogs/{self.obsday}/images'
+    def _write_image_tag(self, img_file, img_name, comments = None, width=400, height=400):        
         img_file.write("<br/>")
         #img_file.write("h5. %s<br/>" % img_name)
-        img_file.write('<img src="%s/%s" width=%s height=%s alt="Uploaded image %s"><br/>' % (server,img_name,str(width),str(height),img_name))
+        img_file.write('<img src="%s/%s" width=%s height=%s alt="Uploaded image %s"><br/>' % (self.server,img_name,str(width),str(height),img_name))
         if isinstance(comments, str):
             img_file.write("<br>{}<br/>".format(comments))
 
@@ -560,14 +563,30 @@ class NightLog(object):
             df = df.fillna(value=0)
             d = df.iloc[0]
 
-            obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'Total Recorded':d['total'],'Time between 18 deg. twilight':d['18deg']})
+            try:
+                obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'RecTime':d['total'],'18deg':d['18deg'],'12deg':d['12deg']})
+            except Exception as e:
+                self.logger.warning(e)
+                self.logger.warning('12 degree twilight time likely not present. Retrying without 12deg field.')
+                obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'RecTime':d['total'],'18deg':d['18deg']})
+                temp_meta_dict = self._open_kpno_file_first(self.meta_json)
+                meta_dict = json.load(open(temp_meta_dict,'r'))
+                Deg12Time = ( datetime.strptime(meta_dict['dawn_12_deg'], '%Y%m%dT%H:%M')-datetime.strptime(meta_dict['dusk_12_deg'], '%Y%m%dT%H:%M') ).seconds/3600
+                obs_items['12deg'] = Deg12Time
+                df['12deg'] = Deg12Time
+                df.to_csv(f)
             file_nl.write("<br/><br/>")
             file_nl.write("Time Use (hrs):<br/>")
             file_nl.write("<ul>")
             for name, item in obs_items.items():
-                if name == 'Time between 18 deg. twilight':
+                if name == '18deg':
                     try:
-                        file_nl.write("<li> {}: {:.3f}</li>".format(name, float(item)))
+                        file_nl.write("<li> {}: {:.3f}</li>".format('Time between 18 deg. twilight', float(item)))
+                    except Exception as e:
+                        self.logger.info(e)
+                elif name == '12deg':
+                    try:
+                        file_nl.write("<li> {}: {:.3f}</li>".format('Time between 12 deg. twilight', float(item)))
                     except Exception as e:
                         self.logger.info(e)
                 else:
