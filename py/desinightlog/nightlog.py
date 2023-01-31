@@ -570,20 +570,22 @@ class NightLog(object):
                 obs_items  = OrderedDict({'Observing':d['obs_time'],'Testing':d['test_time'],'Loss to Instrument':d['inst_loss'],'Loss to Weather':d['weather_loss'],'Loss to Telescope':d['tel_loss'],'RecTime':d['total'],'18deg':d['18deg']})
                 temp_meta_dict = self._open_kpno_file_first(self.meta_json)
                 meta_dict = json.load(open(temp_meta_dict,'r'))
-
-                obs_items['12deg'] = ( datetime.strptime(meta_dict['dawn_12_deg'], '%Y%m%dT%H:%M')-datetime.strptime(meta_dict['dusk_12_deg'], '%Y%m%dT%H:%M') ).seconds/3600
+                Deg12Time = ( datetime.strptime(meta_dict['dawn_12_deg'], '%Y%m%dT%H:%M')-datetime.strptime(meta_dict['dusk_12_deg'], '%Y%m%dT%H:%M') ).seconds/3600
+                obs_items['12deg'] = Deg12Time
+                df['12deg'] = Deg12Time
+                df.to_csv(f)
             file_nl.write("<br/><br/>")
             file_nl.write("Time Use (hrs):<br/>")
             file_nl.write("<ul>")
             for name, item in obs_items.items():
-                if name == 'Time between 18 deg. twilight':
+                if name == '18deg':
                     try:
-                        file_nl.write("<li> {}: {:.3f}</li>".format(name, float(item)))
+                        file_nl.write("<li> {}: {:.3f}</li>".format('Time between 18 deg. twilight', float(item)))
                     except Exception as e:
                         self.logger.info(e)
-                elif name == 'Time between 12 deg. twilight':
+                elif name == '12deg':
                     try:
-                        file_nl.write("<li> {}: {:.3f}</li>".format(name, float(item)))
+                        file_nl.write("<li> {}: {:.3f}</li>".format('Time between 12 deg. twilight', float(item)))
                     except Exception as e:
                         self.logger.info(e)
                 else:
