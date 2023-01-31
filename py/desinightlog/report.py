@@ -216,7 +216,7 @@ class Report(Layout):
                     total += 0
 
         data['18deg'] = self.full_time
-        data['12degTime'] = self.full_desi_time
+        data['12deg'] = self.full_desi_time
 
         data['total'] = total
         self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
