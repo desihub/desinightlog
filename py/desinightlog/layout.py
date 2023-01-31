@@ -136,10 +136,13 @@ class Layout():
         <li>If you'd like to modify a submitted milestone, <b>Load</b> the index (these can be found on the Current NL), make your modifications, and then press <b>Update</b>.</li>
         <li>At the end of your shift - either at the end of the night or half way through - summarize the activities of the night in the <b>End of Night Summary</b>. 
         You can Load and modify submissions.</li>
-        <li>At the end of the night, record how the time was spent between 12 degree twilight:
+        <li>At the end of the night, record how the night was spent. This includes <b>all time between the first open shutter on sky and the last closed shutter on sky</b>. If you do NOT observe or if observing is started late or ended late, you should replace the start point and/or end point with the evening/morning 12 degree twilight time. This means that the total recorded time should ALWAYS be GREATER THAN OR EQUAL TO the "Total Time between 12 deg. twilights" field below.:
         <ul>
-        <li><b>ObsTime:</b> time in hours spent on sky not - open shutter time, but the total time spent “observing” science targets. This will include the overheads of positioning, acquisition, telescope slews, etc.</li>
-        <li><b>TestTime:</b> When Klaus or the FP team are running tests at night. Dither tests, etc. should be logged under this heading, not Obs</li>
+        <li><b>FOR ALL FIELDS</b> enter time using one of two formats:</li>
+        <li><b>Format 1:</b> HH:MM where the Minutes field is zero padded on the correct end if necessary. For example 01:01 will record one hour and one minute and 01:10 will record one hour and 10 minutes. Entering times like 1:1 will probably result in recording one hour and 10 minutes, but this is not proper syntax</li>
+        <li><b>Format 2:</b> Decimal hours. For example, 1.5 records one hour and 30 minutes, 1.016 records one hour and one minute</li>
+        <li><b>ObsTime:</b> time in hours spent on sky not open shutter time, but the total time spent “observing” science targets. This will include the overheads of positioning, acquisition, telescope slews, etc.</li>
+        <li><b>TestTime:</b> When Klaus and/or the FP team are running tests at night. Dither tests, etc. should be logged under this heading, not Obs</li>
         <li><b>InstLoss:</b> Time which is lost to instrument problems. That is, when the acquisition fails; or observing has to stop due to a problem with DESI; or an image is lost after integrating for a while.</li>
         <li><b>WeathLoss:</b> Time lost to weather issues, including useless exposures. If the entire night is lost to weather, please enter the time between 18 deg twilights, even if some time was used for closed dome tests (which you can enter under "TestTime"), and if you quit early.</li>
         <li><b>TelLoss:</b> time lost to telescope / facility issues (e.g.,floor cooling problem that causes stoppage; or dome shutter breaks; or mirror cover issues; etc.). Personnel issues (e.g., no LOS available) should be logged here.</li>
@@ -172,7 +175,8 @@ class Layout():
         self.weather_loss_time = TextInput(title='WeathLoss', placeholder='0', width=100)
         self.tel_loss_time = TextInput(title='TelLoss', placeholder='0', width=100)
         self.total_time = Div(text='Time Documented (hrs): ', width=100) #add all times together
-        self.full_time_text = Div(text='Total time between 18 deg. twilights (hrs): ', width=100)
+        self.full_time_text = Div(text='Total time between 18 deg. twilights (hrs) ', width=100)
+        self.full_desi_time_text = Div(text='Total time between 12 deg. twilights (hrs) ', width=100)        
         self.time_btn = Button(label='Add/Update Time Use', css_classes=['add_button'], width=150)
         
         #For Lead Observer
@@ -189,7 +193,7 @@ class Layout():
                                     self.summary_input,
                                     self.summary_btn,
                                     [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, 
-                                    self.tel_loss_time, self.total_time, self.full_time_text],
+                                    self.tel_loss_time, self.total_time, self.full_time_text, self.full_desi_time_text],
                                     self.time_btn], width=1000)
 
         self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')

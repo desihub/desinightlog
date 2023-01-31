@@ -78,6 +78,8 @@ class Report(Layout):
             self.location = 'nersc'
             self.conn = psycopg2.connect(host="db.replicator.dev-cattle.stable.spin.nersc.org", port="60042", database="desi_dev", user="desi_reader", password="reader")
         else:
+            # This backstop only works as long as we continue
+            # to only support NERSC and KPNO logs
             self.location = 'nersc'
 
         self.intro_subtitle = Div(text="Connect to Night Log", css_classes=['subt-style'])
@@ -214,6 +216,8 @@ class Report(Layout):
                     total += 0
 
         data['18deg'] = self.full_time
+        data['12degTime'] = self.full_desi_time
+
         data['total'] = total
         self.total_time.text = 'Time Documented (hrs): {}'.format(str(self._dec_to_hm(total)))
         df = pd.DataFrame(data, index=[0])
@@ -417,7 +421,9 @@ class Report(Layout):
             self.tel_loss_time.value = self._dec_to_hm(data['tel_loss'])
             self.total_time.text = 'Time Documented (hrs): {}'.format(self._dec_to_hm(data['total']))
             self.full_time = (datetime.datetime.strptime(meta_dict['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
+            self.full_desi_time = (datetime.datetime.strptime(meta_dict['dawn_12_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta_dict['dusk_12_deg'], '%Y%m%dT%H:%M')).seconds/3600
             self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
+            self.full_desi_time_text.text = 'Total time between 12 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_desi_time))
             self.milestone_alert.text = 'Time Use Data Updated'
         except Exception as e:
             self.milestone_alert.text = 'Issue with Time Use Data: {}'.format(e)
@@ -447,7 +453,9 @@ class Report(Layout):
             meta['dawn_10_deg'] = eph['dawn_ten']
 
             self.full_time = (datetime.datetime.strptime(meta['dawn_18_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta['dusk_18_deg'], '%Y%m%dT%H:%M')).seconds/3600
+            self.full_desi_time = (datetime.datetime.strptime(meta['dawn_12_deg'], '%Y%m%dT%H:%M') - datetime.datetime.strptime(meta['dusk_12_deg'], '%Y%m%dT%H:%M')).seconds/3600
             self.full_time_text.text = 'Total time between 18 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_time))
+            self.full_desi_time_text.text = 'Total time between 12 deg. twilights (hrs): {}'.format(self._dec_to_hm(self.full_desi_time))
             self.plots_start = meta['dusk_10_deg']
             self.plots_end = meta['dawn_10_deg']
             self.DESI_Log.get_started_os(meta)
@@ -1000,7 +1008,9 @@ class Report(Layout):
                 input_name = os.path.splitext(str(self.img_upload_problems.filename))
                 self.current_img_name = self.img_upload_problems.filename
                 img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
-        self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
+        
+        #self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
+        self.image_location_on_server = f'http://desi-4.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
         width=400
         height=400 #http://desi-www.kpno.noirlab.edu:8090/nightlogs
         preview = '<img src="%s" width=%s height=%s alt="Uploaded image %s">\n' % (self.image_location_on_server,str(width),str(height),img_name)
@@ -1180,7 +1190,8 @@ class Report(Layout):
 
     ##NightLog Submission
     def nl_submit(self):
-
+        import time
+        time.sleep(10)
         if not self.current_nl():
             self.nl_text.text = 'You cannot submit a Night Log to the eLog until you have connected to an existing Night Log or initialized tonights Night Log'
         else:
