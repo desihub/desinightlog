@@ -1190,8 +1190,6 @@ class Report(Layout):
 
     ##NightLog Submission
     def nl_submit(self):
-        import time
-        time.sleep(10)
         if not self.current_nl():
             self.nl_text.text = 'You cannot submit a Night Log to the eLog until you have connected to an existing Night Log or initialized tonights Night Log'
         else:
