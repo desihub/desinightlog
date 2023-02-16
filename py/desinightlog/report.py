@@ -956,6 +956,10 @@ class Report(Layout):
     def summary_add(self):
         if self.summary_input.value in ['',' ','nan','None']:
             self.milestone_alert.text = 'Nothing written in the summary so not submitted. Try Loading again.'
+        elif ((self.summary_option.active == 0) and (not bool(self.summary_clobber1.active)) and (self.summary_load(exists_only = True))) or ((self.summary_option.active == 1) and (not bool(self.summary_clobber2.active)) and (self.summary_load(exists_only = True))) :
+            self.milestone_alert.text = 'There is already a summary in this half of the nightlog. Please confirm you want to clobber. Original input: {0}'.format(self.summary_input.value)
+            #self.milestone_alert.text = 'Params summary_active {0}, summary_clobber1_active {1}, summary_clobber2_active {2}, summary exists: {3}'.format(self.summary_option.active, self.summary_clobber1.active, self.summary_clobber2.active, self.summary_load(exists_only = True))
+            self.summary_load()
         else:
             now = datetime.datetime.now().strftime("%H:%M")
             half = self.summary_option.active
@@ -1163,28 +1167,21 @@ class Report(Layout):
         df = pd.DataFrame(data, index=[0])
         df.to_csv(self.DESI_Log.time_use, index=False)
 
-    def summary_add(self):
-        if self.summary_input.value in ['',' ','nan','None']:
-            self.milestone_alert.text = 'Nothing written in the summary so not submitted. Try Loading again.'
-        else:
-            now = datetime.datetime.now().strftime("%H:%M")
-            half = self.summary_option.active
-            data = OrderedDict()
-            data['SUMMARY_{}'.format(half)] = self.summary_input.value
-            self.DESI_Log.add_summary(data)
-            self.milestone_alert.text = 'Summary Information Entered at {}: {}'.format(now, self.summary_input.value)
-            self.clear_input([self.summary_input])
-
-    def summary_load(self):
+    
+    def summary_load(self, exists_only = False):
         half = self.summary_option.active
         f = self.DESI_Log.summary_file
         if os.path.exists(f):
             try:
                 df = pd.read_csv(f)
                 d = df.iloc[0]
-                self.summary_input.value = d['SUMMARY_{}'.format(half)]
+                tempSum = d['SUMMARY_{}'.format(half)]
+                if exists_only:
+                    return (tempSum == tempSum)
+                self.summary_input.value = tempSum
             except Exception as e:
-                print('Issue loading summary: {}'.format(e))
+                self.milestone_alert.text = 'Issue loading summary: {}'.format(e)
+                return False
         else:
             self.milestone_alert.text = 'That summary does not yet exist'
 

@@ -165,6 +165,8 @@ class Layout():
         #End of shift Summaries
         self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary', title='End of Night Summary', max_length=5000)
         self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
+        self.summary_clobber1 = CheckboxGroup(labels=['Clobber First Half'], active=[], width=150)
+        self.summary_clobber2 = CheckboxGroup(labels=['Clobber Second Half'], active=[], width=175)
         self.summary_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.summary_btn = Button(label='Add/Update Summary', css_classes=['add_button'], width=150)
 
@@ -189,7 +191,7 @@ class Layout():
                                     [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
                                     self.milestone_alert,
                                     self.line,
-                                    [self.summary_option,self.summary_load_btn],
+                                    [self.summary_option,self.summary_clobber1,self.summary_clobber2,self.summary_load_btn],
                                     self.summary_input,
                                     self.summary_btn,
                                     [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, 
@@ -207,7 +209,7 @@ class Layout():
                                     [self.milestone_new_btn, self.milestone_btn, self.milestone_delete_btn] ,
                                     self.milestone_alert,
                                     self.line,
-                                    [self.summary_option,self.summary_load_btn],
+                                    [self.summary_option,self.summary_clobber1,self.summary_clobber2,self.summary_load_btn],
                                     self.summary_input,
                                     self.summary_btn], width=1000)
 
