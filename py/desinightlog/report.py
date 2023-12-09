@@ -115,6 +115,12 @@ class Report(Layout):
         self.lastPeriodicCallbackErrorStr = None
         self.lastPeriodicCallbackErrorClass = None
 
+        #set variables for repeated unharmful errors to reduce log volume
+        self.repeatedFinishTheNightError = "\'NoneType\' object has no attribute \'finish_the_night\'"
+        self.repeatedNightlogHTMLError = "\'NoneType\' object has no attribute \'nightlog_html\'"
+
+
+
 
     ##Util functions
     def clear_input(self, items):
@@ -139,8 +145,11 @@ class Report(Layout):
                 try:
                     b = datetime.datetime.strptime(time, '%I%M%p')
                 except:
-                    print(time)
-                    print('need format %H%M, %H:%M, %H:%M%p')
+                    try:
+                        b = datetime.datetime.strptime(time, '%H:%M%p')
+                    except:
+                        print(time)
+                        print('need format %H%M, %H:%M, %H:%M%p')
         t = datetime.time(hour=b.hour, minute=b.minute)
         if t < datetime.time(hour=12,minute=0):
             d = date + datetime.timedelta(days=1)
@@ -498,16 +507,19 @@ class Report(Layout):
                 if (self.lastPeriodicCallbackErrorStr == str(e)) & (self.lastPeriodicCallbackErrorClass == e.__class__):
                     self.logger.info('same exception as before: {0}'.format(e))
                 else:
-                    self.logger.info('not the same exception as before')
                     self.lastPeriodicCallbackErrorStr = str(e)
                     self.lastPeriodicCallbackErrorClass = e.__class__
-                    self.logger.info('new exception should be raised here.')
-                    raise(e)
+                    if e.__str__().lower() == self.repeatedFinishTheNightError.lower():
+                        self.logger.info('repeated Finish The Night error')
+                    elif e.__str__().lower() == self.repeatedNightlogHTMLError.lower():
+                        self.logger.info('repeated NightlogHTML error')
+                    else:
+                        raise(e)
             else:
                 self.logger.info('no current lastPeriodicCallbackError')
                 self.lastPeriodicCallbackErrorStr = str(e)
                 self.lastPeriodicCallbackErrorClass = e.__class__
-                self.logger.info('new exception should be raised here.')
+                #self.logger.info('new exception should be raised here.')
                 raise(e)
         path = self.DESI_Log.nightlog_html 
         nl_file = open(path,'r')
