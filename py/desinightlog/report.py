@@ -1021,8 +1021,8 @@ class Report(Layout):
                 self.current_img_name = self.img_upload_problems.filename
                 img_name = input_name[0] + '_{}'.format(self.location) + input_name[1]
         
-        #self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
-        self.image_location_on_server = f'{self.server}/{img_name}'
+        self.image_location_on_server = f'http://desi-www.kpno.noirlab.edu:8090/{self.night}/images/{img_name}'
+        #self.image_location_on_server = f'{self.server}/{img_name}'
         width=400
         height=400 #http://desi-www.kpno.noirlab.edu:8090/nightlogs
         preview = '<img src="%s" width=%s height=%s alt="Uploaded image %s">\n' % (self.image_location_on_server,str(width),str(height),img_name)
