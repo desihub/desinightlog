@@ -329,7 +329,14 @@ class Report(Layout):
                 days_.append(day)
             except:
                 pass
+                
+        night = datetime.datetime.now().date().strftime("%Y%m%d")
+
+        if not (night in days_):
+            days_.append(night)
+
         init_nl_list = np.sort([day for day in days_])[::-1][0:10]
+
         self.date_init.options = list(init_nl_list)
         self.date_init.value = init_nl_list[0]
 
