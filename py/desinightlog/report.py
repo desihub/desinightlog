@@ -401,7 +401,8 @@ class Report(Layout):
                 self.so_name_1.value = meta_dict['so_1_firstname']+' '+meta_dict['so_1_lastname']
                 self.so_name_2.value = meta_dict['so_2_firstname']+' '+meta_dict['so_2_lastname']
                 self.LO_1.value = meta_dict['LO_firstname_1']+' '+meta_dict['LO_lastname_1']
-                self.LO_2.value = meta_dict['LO_firstname_2']+' '+meta_dict['LO_lastname_2']
+                #CLP removing LO2 from metadata
+                #self.LO_2.value = meta_dict['LO_firstname_2']+' '+meta_dict['LO_lastname_2']
                 self.OA.value = meta_dict['OA_firstname']+' '+meta_dict['OA_lastname']
                 self.plots_start = meta_dict['dusk_10_deg']
                 self.plots_end = meta_dict['dawn_10_deg']
