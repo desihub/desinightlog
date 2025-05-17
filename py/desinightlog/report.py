@@ -365,7 +365,9 @@ class Report(Layout):
         self.observer = self.obs_type.active #0=LO; 1=SO
         if self.observer == 0:
             self.title.text = 'DESI Nightly Intake - Lead Observer'
-            self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0, self.check_tab,  self.nl_tab_0, self.ns_tab]
+            self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0,  self.nl_tab_0, self.ns_tab]
+            #CLP removing this line to remove the checklist tab
+            #self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0, self.check_tab,  self.nl_tab_0, self.ns_tab]
             self.time_tabs = [None, None, None, self.exp_time, self.prob_time, None, None, None]
             self.connect_txt.text = 'Connected to Night Log for {}'.format(self.night)
             self.report_type = 'LO'
