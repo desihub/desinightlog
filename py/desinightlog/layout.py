@@ -129,7 +129,7 @@ class Layout():
         self.plan_tab = Panel(child=plan_layout, title="Night Plan")
 
     def get_milestone_layout(self):
-        """Page to input milestones, write end of shift summaries, and enter time use
+        """Page to input milestones, write end of shift summary, and enter time use
         """
         self.milestone_subtitle = Div(text="Milestones & Major Accomplishments", css_classes=['subt-style'])
         inst = """<ul>
@@ -137,8 +137,10 @@ class Layout():
         <b>Plan</b> tab. Include exposure numbers that correspond with the accomplishment, and if applicable, indicate any exposures to ignore in a series.
         Do NOT enter an index for new items - they will be generated.</li>
         <li>If you'd like to modify a submitted milestone, <b>Load</b> the index (these can be found on the Current NL), make your modifications, and then press <b>Update</b>.</li>
-        <li>At the end of your shift - either at the end of the night or half way through - summarize the activities of the night in the <b>End of Night Summary</b>. 
-        You can Load and modify submissions.</li>
+
+        <li>At the end of the night, please provide a summary. The information should include: Conditions were (good/bad/windy etc). There were (no) technical problems (see details below).
+        We observed X dark/bright/backup tiles to completion (ie tiles, not exposures that were splits) in addition to X special tiles. There was (no) instrument engineering work.
+        X minutes were lost to the VC caravan. We completed X dome closed tasks.</li>
         <li>At the end of the night, record how the night was spent. This includes <b>all time between the first open shutter on sky and the last closed shutter on sky</b>. If you do NOT observe or if observing is started late or ended late, you should replace the start point and/or end point with the evening/morning 12 degree twilight time. This means that the total recorded time should ALWAYS be GREATER THAN OR EQUAL TO the "Total Time between 12 deg. twilights" field below.:
         <ul>
         <li><b>FOR ALL FIELDS</b> enter time using one of two formats:</li>
@@ -166,7 +168,7 @@ class Layout():
         self.milestone_alert = Div(text=' ', css_classes=['alert-style'])
         
         #End of shift Summaries
-        self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary', title='End of Night Summary', max_length=5000)
+        self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary. See example text above', title='End of Night Summary', max_length=5000)
         self.summary_option = RadioButtonGroup(labels=['Night Summary'], active=0, width=200)
         #CLP removing first half and second half summaries
         #self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
