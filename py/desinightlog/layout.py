@@ -164,7 +164,9 @@ class Layout():
         
         #End of shift Summaries
         self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary', title='End of Night Summary', max_length=5000)
-        self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
+        self.summary_option = RadioButtonGroup(labels=['Night Summary'], active=0, width=200)
+        #CLP removing first half and second half summaries
+        #self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
         self.summary_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.summary_btn = Button(label='Add/Update Summary', css_classes=['add_button'], width=150)
 
