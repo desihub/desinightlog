@@ -169,7 +169,7 @@ class NightLog(object):
 
         df = self.safe_read_csv(filen)
         data_df = pd.DataFrame([data], columns=cols)
-        df = df.append(data_df)
+        df = pd.concat([df, data_df])
 
         if self.replace:
             df = df.drop_duplicates(['Time'], keep='last')
