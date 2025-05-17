@@ -200,8 +200,10 @@ class Layout():
                                     [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, 
                                     self.tel_loss_time, self.total_time, self.full_time_text, self.full_desi_time_text],
                                     self.time_btn], width=1000)
+        #CLP renaming Milestones tab to LO summary
+        #self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
+        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='LO Summary')
 
-        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
         #For Support Observer
         milestone_layout_1 = layout([self.buffer,
                                     self.title,
