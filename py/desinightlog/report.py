@@ -330,7 +330,14 @@ class Report(Layout):
             except:
                 pass
                 
-        night = datetime.datetime.now().date().strftime("%Y%m%d")
+        timenow = datetime.datetime.now()
+        night = timenow.date().strftime("%Y%m%d")
+        hournow = timenow.hour
+        if (hournow < 12):
+            night = (timenow - datetime.timedelta(days=1)).date().strftime("%Y%m%d")
+        else:
+            night = timenow.date().strftime("%Y%m%d")
+        #night = datetime.datetime.now().date().strftime("%Y%m%d")
 
         if not (night in days_):
             days_.append(night)
