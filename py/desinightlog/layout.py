@@ -431,23 +431,26 @@ class Layout():
         self.plots_subtitle = Div(text='Telemetry Plots', css_classes=['subt-style'],width=800)
 
         #For Lead Observer
-        weather_layout_0 = layout([self.buffer,self.title,
+        weather_layout_0 = layout([self.buffer,
                                 self.weather_subtitle,
-                                self.weather_inst,
-                                [self.weather_desc, self.weather_btn],
-                                self.weather_alert,
-                                self.weather_table,
+                                #CLP removing weather table
+                                #self.weather_inst,self.title,
+                                #[self.weather_desc, self.weather_btn],
+                                #self.weather_alert,
+                                
+                                #self.weather_table,
                                 self.plots_subtitle,
                                 self.bk_plots], width=1000)
 
         self.weather_tab_0 = Panel(child=weather_layout_0, title="Observing Conditions")
 
         #For Support Observer
-        weather_layout_1 = layout([self.buffer,self.title,
+        weather_layout_1 = layout([self.buffer,
                                 self.weather_subtitle,
-                                self.weather_inst,
-                                self.weather_alert,
-                                self.weather_table,
+                                #CLP removing weather table
+                                #self.weather_inst,
+                                #self.weather_alert,self.title,
+                                #self.weather_table,
                                 self.plots_subtitle,
                                 self.bk_plots], width=1000)
 
