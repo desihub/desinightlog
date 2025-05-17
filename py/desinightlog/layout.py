@@ -23,10 +23,10 @@ class Layout():
         self.nw_dir = os.environ['NW_DIR'] #nightwatch directory
         self.nl_dir = os.environ['NL_DIR'] #nightlog directory
 
-        self.lo_names = ['None ', 'Liz Buckley-Geer', 'Ann Elliott', 'Satya Gontcho A Gontcho', 'James Lasker',
+        self.lo_names = ['None ', 'Ann Elliott', 'Satya Gontcho A Gontcho',
                         'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
-        self.oa_names = ['None ', 'Karen Butler', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
-         'Thaxton Smith', 'Dave Summers','Doug Williams','Other ']
+        self.oa_names = ['None ', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
+         'Thaxton Mountain', 'Dave Summers','Doug Williams','Other ']
 
         #Used on multiple pages
         self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
@@ -56,14 +56,17 @@ class Layout():
         #observers names
         self.so_name_1 = TextInput(title='Support Observing Scientist 1', placeholder='Sally Ride')
         self.so_name_2 = TextInput(title='Support Observing Scientist 2', placeholder="Mae Jemison")
-        self.LO_1 = Select(title='Lead Observer 1', value='None', options=self.lo_names)
-        self.LO_2 = Select(title='Lead Observer 2', value='None', options=self.lo_names)
+        self.LO_1 = Select(title='Lead Observer', value='None', options=self.lo_names)
+        #CLP removing LO_2
+        #self.LO_2 = Select(title='Lead Observer 2', value='None', options=self.lo_names)
         self.OA = Select(title='Observing Assistant', value='Choose One', options=self.oa_names)
 
         #updating metadata
         self.update_log_status = False #This boolean identifies if the meta data for a given NightLog needs to be updated. It is changed in report.py
         self.init_btn = Button(label="Update Night Log Info", css_classes=['init_button'], width=200)
-        self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1, self.LO_2], self.OA, self.init_btn])
+        self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1], self.OA, self.init_btn])
+        #CLP removing LO2
+        #self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1, self.LO_2], self.OA, self.init_btn])
 
         #layout
         self.intro_layout = layout(children=[self.buffer,

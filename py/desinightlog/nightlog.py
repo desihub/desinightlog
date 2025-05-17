@@ -109,10 +109,15 @@ class NightLog(object):
         """
             Operations Scientist lists the personal present, ephemerids and weather conditions at sunset.
         """
-        items = ['LO_firstname_1', 'LO_lastname_1', 'LO_firstname_2', 'LO_lastname_2', 'OA_firstname', 'OA_lastname',
+        items = ['LO_firstname_1', 'LO_lastname_1', 'OA_firstname', 'OA_lastname',
         'so_1_firstname', 'so_1_lastname', 'so_2_firstname', 'so_2_lastname',
         'time_sunset', 'time_sunrise', 'time_moonrise', 'time_moonset', 'illumination', 'dusk_10_deg',
         'dusk_18_deg', 'dawn_18_deg', 'dusk_12_deg', 'dawn_12_deg', 'dawn_10_deg', 'dqs_1', 'dqs_last']
+        #CLP removing LO2
+        #items = ['LO_firstname_1', 'LO_lastname_1', 'LO_firstname_2', 'LO_lastname_2', 'OA_firstname', 'OA_lastname',
+        #'so_1_firstname', 'so_1_lastname', 'so_2_firstname', 'so_2_lastname',
+        #'time_sunset', 'time_sunrise', 'time_moonrise', 'time_moonset', 'illumination', 'dusk_10_deg',
+        #'dusk_18_deg', 'dawn_18_deg', 'dusk_12_deg', 'dawn_12_deg', 'dawn_10_deg', 'dqs_1', 'dqs_last']
         meta_dict = {}
         for item in items:
             try:
@@ -634,19 +639,20 @@ class NightLog(object):
         try:
             f = self._open_kpno_file_first(self.meta_json)
             meta_dict = json.load(open(f,'r'))
-
-            if (meta_dict['LO_lastname_2'] == meta_dict['LO_lastname_1']) | (meta_dict['LO_firstname_2'] == 'None'):
-                file_intro.write("<b>Lead Observer</b>: {} {}<br/>".format(meta_dict['LO_firstname_1'],meta_dict['LO_lastname_1']))
-            else:
-                file_intro.write("<b>Lead Observer 1</b>: {} {}<br/>".format(meta_dict['LO_firstname_1'],meta_dict['LO_lastname_1']))
-                file_intro.write("<b>Lead Observer 2</b>: {} {}<br/>".format(meta_dict['LO_firstname_2'],meta_dict['LO_lastname_2']))
+            #CLP removing LO2
+            #if (meta_dict['LO_lastname_2'] == meta_dict['LO_lastname_1']) | (meta_dict['LO_firstname_2'] == 'None'):
+            #    file_intro.write("<b>Lead Observer</b>: {} {}<br/>".format(meta_dict['LO_firstname_1'],meta_dict['LO_lastname_1']))
+            #else:
+            #    file_intro.write("<b>Lead Observer 1</b>: {} {}<br/>".format(meta_dict['LO_firstname_1'],meta_dict['LO_lastname_1']))
+            #    file_intro.write("<b>Lead Observer 2</b>: {} {}<br/>".format(meta_dict['LO_firstname_2'],meta_dict['LO_lastname_2']))
             if (meta_dict['so_2_lastname'] == meta_dict['so_1_lastname']) | (meta_dict['so_2_firstname'] == None):
                 file_intro.write("<b>Support Observing Scientist (SO)</b>: {} {}<br/>".format(meta_dict['so_1_firstname'],meta_dict['so_1_lastname']))
             else:
                 file_intro.write("<b>Support Observing Scientist (SO-1)</b>: {} {}<br/>".format(meta_dict['so_1_firstname'],meta_dict['so_1_lastname']))
                 file_intro.write("<b>Support Observing Scientist (SO-2)</b>: {} {}<br/>".format(meta_dict['so_2_firstname'],meta_dict['so_2_lastname']))
-
-            file_intro.write("<b>Telescope Operator</b>: {} {}<br/>".format(meta_dict['OA_firstname'],meta_dict['OA_lastname']))
+            #CLP removing LO2
+            file_intro.write("<b>Lead Observer (LO) </b>: {} {}<br/>".format(meta_dict['LO_firstname_1'],meta_dict['LO_lastname_1']))
+            file_intro.write("<b>Telescope Operator (OA) </b>: {} {}<br/>".format(meta_dict['OA_firstname'],meta_dict['OA_lastname']))
             file_intro.write("<b>Ephemerides in local time [UTC]</b>:")
             file_intro.write("<ul>")
             file_intro.write("<li> sunset: {}</li>".format(self.write_time(meta_dict['time_sunset'])))
