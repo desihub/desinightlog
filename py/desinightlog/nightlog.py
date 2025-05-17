@@ -747,9 +747,10 @@ class NightLog(object):
         file_nl.write("<br/>")
 
         #Checklists
-        file_nl.write("<h3>Checklist</h3>")
-        self.write_checklist(file_nl)
-        file_nl.write("<br/>")
+        #CLP removed this
+        #file_nl.write("<h3>Checklist</h3>")
+        #self.write_checklist(file_nl)
+        #file_nl.write("<br/>")
 
         #Nightly Progress
         file_nl.write("<h3> Details on the Night Progress</h3>")
