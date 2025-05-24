@@ -365,7 +365,9 @@ class Report(Layout):
         self.observer = self.obs_type.active #0=LO; 1=SO
         if self.observer == 0:
             self.title.text = 'DESI Nightly Intake - Lead Observer'
-            self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0, self.check_tab,  self.nl_tab_0, self.ns_tab]
+            self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0,  self.nl_tab_0, self.ns_tab]
+            #CLP removing this line to remove the checklist tab
+            #self.layout.tabs = [self.intro_tab, self.plan_tab, self.milestone_tab_0, self.exp_tab_0, self.prob_tab, self.weather_tab_0, self.check_tab,  self.nl_tab_0, self.ns_tab]
             self.time_tabs = [None, None, None, self.exp_time, self.prob_time, None, None, None]
             self.connect_txt.text = 'Connected to Night Log for {}'.format(self.night)
             self.report_type = 'LO'
@@ -399,7 +401,8 @@ class Report(Layout):
                 self.so_name_1.value = meta_dict['so_1_firstname']+' '+meta_dict['so_1_lastname']
                 self.so_name_2.value = meta_dict['so_2_firstname']+' '+meta_dict['so_2_lastname']
                 self.LO_1.value = meta_dict['LO_firstname_1']+' '+meta_dict['LO_lastname_1']
-                self.LO_2.value = meta_dict['LO_firstname_2']+' '+meta_dict['LO_lastname_2']
+                #CLP removing LO2 from metadata
+                #self.LO_2.value = meta_dict['LO_firstname_2']+' '+meta_dict['LO_lastname_2']
                 self.OA.value = meta_dict['OA_firstname']+' '+meta_dict['OA_lastname']
                 self.plots_start = meta_dict['dusk_10_deg']
                 self.plots_end = meta_dict['dawn_10_deg']
@@ -450,7 +453,8 @@ class Report(Layout):
         if self.update_log_status:
             meta = OrderedDict()
             meta['LO_firstname_1'], meta['LO_lastname_1'] = self.LO_1.value.split(' ')[0], ' '.join(self.LO_1.value.split(' ')[1:])
-            meta['LO_firstname_2'], meta['LO_lastname_2'] = self.LO_2.value.split(' ')[0], ' '.join(self.LO_2.value.split(' ')[1:])
+            #CLP removing LO2
+            #meta['LO_firstname_2'], meta['LO_lastname_2'] = self.LO_2.value.split(' ')[0], ' '.join(self.LO_2.value.split(' ')[1:])
             meta['so_1_firstname'], meta['so_1_lastname'] = self.so_name_1.value.split(' ')[0], ' '.join(self.so_name_1.value.split(' ')[1:])
             meta['so_2_firstname'], meta['so_2_lastname'] = self.so_name_2.value.split(' ')[0], ' '.join(self.so_name_2.value.split(' ')[1:])
             meta['OA_firstname'], meta['OA_lastname'] = self.OA.value.split(' ')[0], ' '.join(self.OA.value.split(' ')[1:])

@@ -23,10 +23,10 @@ class Layout():
         self.nw_dir = os.environ['NW_DIR'] #nightwatch directory
         self.nl_dir = os.environ['NL_DIR'] #nightlog directory
 
-        self.lo_names = ['None ', 'Liz Buckley-Geer', 'Ann Elliott', 'Satya Gontcho A Gontcho', 'James Lasker',
+        self.lo_names = ['None ', 'Ann Elliott', 'Satya Gontcho A Gontcho',
                         'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
-        self.oa_names = ['None ', 'Karen Butler', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
-         'Thaxton Smith', 'Dave Summers','Doug Williams','Other ']
+        self.oa_names = ['None ', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
+         'Thaxton Mountain', 'Dave Summers','Doug Williams','Other ']
 
         #Used on multiple pages
         self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
@@ -56,14 +56,17 @@ class Layout():
         #observers names
         self.so_name_1 = TextInput(title='Support Observing Scientist 1', placeholder='Sally Ride')
         self.so_name_2 = TextInput(title='Support Observing Scientist 2', placeholder="Mae Jemison")
-        self.LO_1 = Select(title='Lead Observer 1', value='None', options=self.lo_names)
-        self.LO_2 = Select(title='Lead Observer 2', value='None', options=self.lo_names)
+        self.LO_1 = Select(title='Lead Observer', value='None', options=self.lo_names)
+        #CLP removing LO_2
+        #self.LO_2 = Select(title='Lead Observer 2', value='None', options=self.lo_names)
         self.OA = Select(title='Observing Assistant', value='Choose One', options=self.oa_names)
 
         #updating metadata
         self.update_log_status = False #This boolean identifies if the meta data for a given NightLog needs to be updated. It is changed in report.py
         self.init_btn = Button(label="Update Night Log Info", css_classes=['init_button'], width=200)
-        self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1, self.LO_2], self.OA, self.init_btn])
+        self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1], self.OA, self.init_btn])
+        #CLP removing LO2
+        #self.update_layout = layout([[self.so_name_1, self.so_name_2], [self.LO_1, self.LO_2], self.OA, self.init_btn])
 
         #layout
         self.intro_layout = layout(children=[self.buffer,
@@ -126,7 +129,7 @@ class Layout():
         self.plan_tab = Panel(child=plan_layout, title="Night Plan")
 
     def get_milestone_layout(self):
-        """Page to input milestones, write end of shift summaries, and enter time use
+        """Page to input milestones, write end of shift summary, and enter time use
         """
         self.milestone_subtitle = Div(text="Milestones & Major Accomplishments", css_classes=['subt-style'])
         inst = """<ul>
@@ -134,8 +137,8 @@ class Layout():
         <b>Plan</b> tab. Include exposure numbers that correspond with the accomplishment, and if applicable, indicate any exposures to ignore in a series.
         Do NOT enter an index for new items - they will be generated.</li>
         <li>If you'd like to modify a submitted milestone, <b>Load</b> the index (these can be found on the Current NL), make your modifications, and then press <b>Update</b>.</li>
-        <li>At the end of your shift - either at the end of the night or half way through - summarize the activities of the night in the <b>End of Night Summary</b>. 
-        You can Load and modify submissions.</li>
+        <li>At the end of your shift  summarize the activities of the night in the <b>End of Night Summary</b>. 
+        You can Load and modify submissions. <b>Text should include</b>: Conditions were (good/bad/windy etc). There were (no) technical problems (see details below). We observed X dark/bright/backup tiles to completion (ie tiles, not exposures that were splits) in addition to X special tiles. There was (no) instrument engineering work. X minutes were lost to the VC caravan. We completed X dome closed tasks.</li>
         <li>At the end of the night, record how the night was spent. This includes <b>all time between the first open shutter on sky and the last closed shutter on sky</b>. If you do NOT observe or if observing is started late or ended late, you should replace the start point and/or end point with the evening/morning 12 degree twilight time. This means that the total recorded time should ALWAYS be GREATER THAN OR EQUAL TO the "Total Time between 12 deg. twilights" field below.:
         <ul>
         <li><b>FOR ALL FIELDS</b> enter time using one of two formats:</li>
@@ -164,7 +167,9 @@ class Layout():
         
         #End of shift Summaries
         self.summary_input = TextAreaInput(rows=8, placeholder='End of Night Summary', title='End of Night Summary', max_length=5000)
-        self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
+        self.summary_option = RadioButtonGroup(labels=['Night Summary'], active=0, width=200)
+        #CLP removing first half and second half summaries
+        #self.summary_option = RadioButtonGroup(labels=['First Half','Second Half'], active=0, width=200)
         self.summary_load_btn = Button(label='Load', css_classes=['load_button'], width=75)
         self.summary_btn = Button(label='Add/Update Summary', css_classes=['add_button'], width=150)
 
@@ -195,8 +200,10 @@ class Layout():
                                     [self.obs_time, self.test_time, self.inst_loss_time, self.weather_loss_time, 
                                     self.tel_loss_time, self.total_time, self.full_time_text, self.full_desi_time_text],
                                     self.time_btn], width=1000)
+        #CLP renaming Milestones tab to LO summary
+        #self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
+        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='LO Summary')
 
-        self.milestone_tab_0 = Panel(child=milestone_layout_0, title='Milestones')
         #For Support Observer
         milestone_layout_1 = layout([self.buffer,
                                     self.title,
@@ -426,23 +433,26 @@ class Layout():
         self.plots_subtitle = Div(text='Telemetry Plots', css_classes=['subt-style'],width=800)
 
         #For Lead Observer
-        weather_layout_0 = layout([self.buffer,self.title,
+        weather_layout_0 = layout([self.buffer,
                                 self.weather_subtitle,
-                                self.weather_inst,
-                                [self.weather_desc, self.weather_btn],
-                                self.weather_alert,
-                                self.weather_table,
+                                #CLP removing weather table
+                                #self.weather_inst,self.title,
+                                #[self.weather_desc, self.weather_btn],
+                                #self.weather_alert,
+                                
+                                #self.weather_table,
                                 self.plots_subtitle,
                                 self.bk_plots], width=1000)
 
         self.weather_tab_0 = Panel(child=weather_layout_0, title="Observing Conditions")
 
         #For Support Observer
-        weather_layout_1 = layout([self.buffer,self.title,
+        weather_layout_1 = layout([self.buffer,
                                 self.weather_subtitle,
-                                self.weather_inst,
-                                self.weather_alert,
-                                self.weather_table,
+                                #CLP removing weather table
+                                #self.weather_inst,
+                                #self.weather_alert,self.title,
+                                #self.weather_table,
                                 self.plots_subtitle,
                                 self.bk_plots], width=1000)
 
