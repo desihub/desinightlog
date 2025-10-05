@@ -24,7 +24,7 @@ class Layout():
         self.nl_dir = os.environ['NL_DIR'] #nightlog directory
 
         self.lo_names = ['None ', 'Ann Elliott', 'Satya Gontcho A Gontcho',
-                        'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
+                        'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Nabendu Kumar Khan','Other ']
         self.oa_names = ['None ', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
          'Thaxton Mountain', 'Dave Summers','Doug Williams','Other ']
 
