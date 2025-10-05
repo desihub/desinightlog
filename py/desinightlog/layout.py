@@ -25,7 +25,7 @@ class Layout():
 
         self.lo_names = ['None ', 'Ann Elliott', 'Satya Gontcho A Gontcho',
                         'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Nabendu Kumar Khan','Other ']
-        self.oa_names = ['None ', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
+        self.oa_names = ['None ', 'Anthony Paat', 'Amy Robertson',
          'Thaxton Mountain', 'Dave Summers','Doug Williams','Other ']
 
         #Used on multiple pages
