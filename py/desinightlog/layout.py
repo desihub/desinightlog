@@ -23,10 +23,22 @@ class Layout():
         self.nw_dir = os.environ['NW_DIR'] #nightwatch directory
         self.nl_dir = os.environ['NL_DIR'] #nightlog directory
 
-        self.lo_names = ['None ', 'Ann Elliott', 'Satya Gontcho A Gontcho',
-                        'Martin Landriau', 'Claire Poppett', 'Michael Schubnell', 'Luke Tyas', 'Other ']
-        self.oa_names = ['None ', 'John Della Costa', 'Anthony Paat', 'Amy Robertson',
-         'Thaxton Mountain', 'Dave Summers','Doug Williams','Other ']
+        self.lo_names = ['None ',
+                         'Ann Elliott',
+                         'Satya Gontcho A Gontcho',
+                         'Nabendu Kumar Khan',
+                         'Martin Landriau',
+                         'Claire Poppett',
+                         'Michael Schubnell',
+                         'Luke Tyas',
+                         'Other ']
+        self.oa_names = ['None ',
+                         'Anthony Paat',
+                         'Amy Robertson',
+                         'Thaxton Mountain',
+                         'Dave Summers',
+                         'Doug Williams',
+                         'Other ']
 
         #Used on multiple pages
         self.time_title = Paragraph(text='Time (Kitt Peak local time)', align='center')
