@@ -25,7 +25,6 @@ class Layout():
 
         self.lo_names = ['None ',
                          'Ann Elliott',
-                         'Satya Gontcho A Gontcho',
                          'Nabendu Kumar Khan',
                          'Martin Landriau',
                          'Claire Poppett',
@@ -33,6 +32,7 @@ class Layout():
                          'Luke Tyas',
                          'Other ']
         self.oa_names = ['None ',
+                         'Ava Doty',
                          'Anthony Paat',
                          'Amy Robertson',
                          'Thaxton Mountain',
