@@ -37,6 +37,7 @@ class Layout():
                          'Amy Robertson',
                          'Thaxton Mountain',
                          'Dave Summers',
+                         'Vince Tucker',
                          'Doug Williams',
                          'Other ']
 
